@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/common';
+import { Alert, Button } from 'antd';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -111,12 +111,7 @@ export const LoginPage = () => {
 
           {/* Error Alert */}
           {errorMessage && (
-            <div className="flex items-center p-4 mb-4 text-sm text-red-700 bg-red-50 rounded-lg border border-red-100" role="alert">
-              <svg className="flex-shrink-0 inline w-5 h-5 mr-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-              </svg>
-              <span className="font-medium">{errorMessage}</span>
-            </div>
+            <Alert message={errorMessage} type="error" showIcon className="mb-4" />
           )}
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -194,10 +189,11 @@ export const LoginPage = () => {
             {/* Submit Button */}
             <div>
               <Button
-                type="submit"
+                type="primary"
+                htmlType="submit"
                 loading={loading}
-                className="w-full flex justify-center py-3.5 px-4 text-sm font-semibold rounded-xl"
-                style={{ minHeight: 48 }}
+                className="w-full"
+                size="large"
               >
                 Đăng nhập hệ thống
               </Button>
