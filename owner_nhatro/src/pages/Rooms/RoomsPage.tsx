@@ -127,7 +127,7 @@ export const RoomsPage = () => {
       formData.append('address', values.address);
       formData.append('price', values.price.toString());
       formData.append('description', values.description);
-      
+
       if (values.area) {
         formData.append('area', values.area.toString());
       }
@@ -169,7 +169,7 @@ export const RoomsPage = () => {
    */
   const handleOpenEdit = () => {
     if (!selectedHostel) return;
-    
+
     // Pre-fill form with existing data
     editForm.setFieldsValue({
       title: selectedHostel.name,
@@ -178,8 +178,11 @@ export const RoomsPage = () => {
       area: selectedHostel.area,
       description: selectedHostel.description,
       amenities: selectedHostel.amenities || '',
+      contactPhone: selectedHostel.contactPhone,
+      contactEmail: selectedHostel.contactEmail,
+      contactName: selectedHostel.contactName,
     });
-    
+
     // Set existing images
     setExistingImages(selectedHostel.imageUrls || []);
     setEditFileList([]);
@@ -198,7 +201,7 @@ export const RoomsPage = () => {
    */
   const handleUpdate = async () => {
     if (!selectedHostel) return;
-    
+
     try {
       const values = await editForm.validateFields();
       setEditLoading(true);
@@ -208,10 +211,10 @@ export const RoomsPage = () => {
       // Step 1: Update images if there are changes
       if (editFileList.length > 0 || existingImages.length !== (selectedHostel.imageUrls?.length || 0)) {
         const imageFormData = new FormData();
-        
+
         // Add images to keep
         existingImages.forEach(url => imageFormData.append('keepImages', url));
-        
+
         // Add new image files
         editFileList.forEach(file => {
           if (file.originFileObj) {
@@ -231,9 +234,9 @@ export const RoomsPage = () => {
         price: values.price,
         area: values.area,
         amenities: values.amenities || '',
-        contactName: selectedHostel.contactName,
-        contactPhone: selectedHostel.contactPhone,
-        contactEmail: selectedHostel.contactEmail,
+        contactName: values.contactName || selectedHostel.contactName,
+        contactPhone: values.contactPhone || selectedHostel.contactPhone,
+        contactEmail: values.contactEmail || selectedHostel.contactEmail,
         images: finalImageUrls,
       };
 
@@ -313,7 +316,7 @@ export const RoomsPage = () => {
                           <span className="text-gray-500">Diện tích:</span>
                           <span className="font-semibold ml-1">{hostel.area}m²</span>
                         </div>
-                        
+
                       </div>
                       <div className="border-t border-gray-200 pt-3 mb-3">
                         <p className="text-sm text-gray-500">
@@ -366,7 +369,7 @@ export const RoomsPage = () => {
                           src={img}
                           alt={`Ảnh ${idx + 1}`}
                           className="h-20 w-28 flex-shrink-0 object-cover rounded cursor-pointer hover:opacity-80 transition-opacity"
-                          style={{ 
+                          style={{
                             border: idx === currentImageIndex ? '3px solid #1677ff' : '2px solid #e5e7eb'
                           }}
                           onClick={() => {
@@ -393,7 +396,7 @@ export const RoomsPage = () => {
                       <span className="text-gray-500">Diện tích:</span>
                       <div className="font-semibold">{selectedHostel.area}m²</div>
                     </div>
-                  
+
                     <div>
                       <span className="text-gray-500">Ngày tạo:</span>
                       <div className="font-semibold">{formatDate(selectedHostel.createdAt)}</div>
@@ -411,7 +414,7 @@ export const RoomsPage = () => {
                     <p><strong>Chủ nhà:</strong> {selectedHostel.ownerName}</p>
                   </div>
                 </Card>
-               
+
                 {selectedHostel.description && (
                   <Card className="bg-gray-50" title="Mô tả" bordered={false}>
                     <p className="text-sm whitespace-pre-line">{selectedHostel.description}</p>
@@ -422,6 +425,7 @@ export const RoomsPage = () => {
                     <p className="text-sm">{selectedHostel.amenities}</p>
                   </Card>
                 )}
+               
               </div>
               <div className="flex justify-end gap-2 mt-6">
                 <Button onClick={handleCloseDetail}>Đóng</Button>
@@ -640,6 +644,32 @@ export const RoomsPage = () => {
               <Input placeholder="VD: Wifi, Điều hòa, Máy giặt, Tủ lạnh" />
             </Form.Item>
 
+            <Form.Item
+              label="Tên người liên hệ"
+              name="contactName"
+            >
+              <Input placeholder="VD: Nguyễn Văn A" />
+            </Form.Item>
+
+            <Form.Item
+              label="Số điện thoại liên hệ"
+              name="contactPhone"
+              rules={[
+                { pattern: /^[0-9]{10,11}$/, message: 'Số điện thoại không hợp lệ!' },
+              ]}
+            >
+              <Input placeholder="VD: 0901234567" />
+            </Form.Item>
+
+            <Form.Item
+              label="Email liên hệ"
+              name="contactEmail"
+              rules={[
+                { type: 'email', message: 'Email không hợp lệ!' },
+              ]}
+            >
+              <Input placeholder="VD: contact@example.com" />
+            </Form.Item>
             {/* Existing Images */}
             {existingImages.length > 0 && (
               <div className="mb-4">
