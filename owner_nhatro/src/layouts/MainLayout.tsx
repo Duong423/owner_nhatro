@@ -10,7 +10,7 @@ interface MainLayoutProps {
 const NAV_ITEMS = [
   { path: '/dashboard', label: 'Dashboard' },
   { path: '/rooms', label: 'Phòng trọ' },
-  { path: '/tenants', label: 'Khách thuê' },
+  { path: '/tenants', label: 'Đặt trọ' },
   { path: '/contracts', label: 'Hợp đồng' },
   { path: '/payments', label: 'Thanh toán' },
 ];

@@ -4,3 +4,4 @@ export * from './tenant.types';
 export * from './contract.types';
 export * from './payment.types';
 export * from './auth.types';
+export * from './booking.types';
