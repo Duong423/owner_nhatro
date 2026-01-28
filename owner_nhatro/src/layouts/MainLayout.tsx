@@ -99,13 +99,13 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 w-full px-4 sm:px-6 lg:px-8 py-6">
         {children}
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-white border-t border-gray-200 py-6">
-        <div className="max-w-7xl mx-auto px-4 text-center">
+      <footer className="bg-white border-t border-gray-200 py-4">
+        <div className="w-full px-4 text-center">
           <p className="text-sm text-gray-500">
             &copy; {new Date().getFullYear()} Hệ thống quản lý nhà trọ. 
             <span className="hidden sm:inline"> All rights reserved.</span>

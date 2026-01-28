@@ -38,5 +38,14 @@ export const bookingService = {
             params: { phone }
         });
         return response.result || [];
+    },
+
+    /**
+     * Cancel booking
+     * PUT /api/bookings/{bookingId}/cancel
+     */
+    cancelBooking: async (bookingId: number): Promise<any> => {
+        const response: any = await axiosInstance.put(`/bookings/${bookingId}/cancel`);
+        return response.result || response;
     }
 };

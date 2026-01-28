@@ -1,13 +1,16 @@
 // Bookings page - Quản lý đặt trọ
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
 import { bookingService } from '@/services/api/booking.service';
+import { contractService } from '@/services/api/contract.service';
 import { Button, Modal, Alert, Table, Tag, Card, Space, Descriptions, Input } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SearchOutlined, ReloadOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Booking } from '@/types/booking.types';
 
 export const TenantsPage = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -15,6 +18,7 @@ export const TenantsPage = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [searchPhone, setSearchPhone] = useState<string>('');
   const [isSearching, setIsSearching] = useState(false);
+  const [bookingsWithContracts, setBookingsWithContracts] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchBookings();
@@ -27,12 +31,31 @@ export const TenantsPage = () => {
       const data = await bookingService.getOwnerBookings();
       setBookings(data);
       setIsSearching(false);
+      
+      // Check which bookings have contracts
+      await checkBookingsContracts(data);
     } catch (err: any) {
       console.error('Error fetching bookings:', err);
       setError(err?.response?.data?.message || 'Không thể tải danh sách đặt trọ');
     } finally {
       setLoading(false);
     }
+  };
+
+  const checkBookingsContracts = async (bookingsList: Booking[]) => {
+    const contractChecks = await Promise.all(
+      bookingsList.map(async (booking) => {
+        try {
+          const contract = await contractService.getContractByBookingId(booking.bookingId);
+          return contract ? booking.bookingId : null;
+        } catch {
+          return null;
+        }
+      })
+    );
+    
+    const bookingIdsWithContracts = contractChecks.filter((id): id is number => id !== null);
+    setBookingsWithContracts(new Set(bookingIdsWithContracts));
   };
 
   const handleSearch = async () => {
@@ -50,6 +73,9 @@ export const TenantsPage = () => {
       const data = await bookingService.searchBookingsByPhone(searchPhone.trim());
       setBookings(data);
       setIsSearching(true);
+      
+      // Check contracts for search results
+      await checkBookingsContracts(data);
       
       if (data.length === 0) {
         Modal.info({
@@ -156,6 +182,30 @@ export const TenantsPage = () => {
     });
   };
 
+  const handleCancelBooking = (bookingId: number) => {
+    Modal.confirm({
+      title: 'Xác nhận hủy booking',
+      content: 'Bạn có chắc chắn muốn hủy booking này? Hành động này không thể hoàn tác.',
+      okText: 'Xác nhận hủy',
+      cancelText: 'Đóng',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await bookingService.cancelBooking(bookingId);
+          Modal.success({
+            content: 'Hủy booking thành công!',
+          });
+          fetchBookings();
+        } catch (err: any) {
+          Modal.error({
+            title: 'Hủy booking thất bại',
+            content: err?.response?.data?.message || err.message,
+          });
+        }
+      },
+    });
+  };
+
   
 
   const columns: ColumnsType<Booking> = [
@@ -220,31 +270,59 @@ export const TenantsPage = () => {
     {
       title: 'Hành động',
       key: 'action',
-      width: 180,
-      render: (_, record) => (
-        <Space size="small">
-          <Button size="small" type="link" onClick={() => handleViewDetail(record)}>
-            Chi tiết
-          </Button>
-          {record.status.toUpperCase() === 'PENDING' && (
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => handleUpdateStatus(record.bookingId, 'CONFIRMED')}
-            >
-              Xác nhận
+      width: 320,
+      render: (_, record) => {
+        const hasContract = bookingsWithContracts.has(record.bookingId);
+        
+        return (
+          <Space size="small">
+            <Button size="small" type="link" onClick={() => handleViewDetail(record)}>
+              Chi tiết
             </Button>
-          )}
-         
-        </Space>
-      ),
+            {record.status.toUpperCase() === 'PENDING' && (
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => handleUpdateStatus(record.bookingId, 'CONFIRMED')}
+              >
+                Xác nhận
+              </Button>
+            )}
+            {record.status.toUpperCase() === 'CONFIRMED' && (
+              <>
+                {hasContract ? (
+                  <Tag color="green">Hợp đồng đã tạo</Tag>
+                ) : (
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<ArrowRightOutlined />}
+                    onClick={() => navigate(`/contracts?bookingId=${record.bookingId}`)}
+                  >
+                    Tạo hợp đồng
+                  </Button>
+                )}
+              </>
+            )}
+            {(record.status.toUpperCase() === 'PENDING' || record.status.toUpperCase() === 'CONFIRMED') && !hasContract && (
+              <Button
+                size="small"
+                danger
+                onClick={() => handleCancelBooking(record.bookingId)}
+              >
+                Hủy
+              </Button>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
   return (
     <MainLayout>
-      <div className="bookings-page p-8">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bookings-page">
+        <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Quản lý đặt trọ</h1>
         </div>
 

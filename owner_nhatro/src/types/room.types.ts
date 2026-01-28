@@ -8,6 +8,7 @@ export interface Hostel {
   address: string;
   price: number;
   area: number;
+  depositAmount?: number;
   
   contactName: string;
   contactPhone: string;

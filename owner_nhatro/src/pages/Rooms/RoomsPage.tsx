@@ -131,6 +131,9 @@ export const RoomsPage = () => {
       if (values.area) {
         formData.append('area', values.area.toString());
       }
+      if (values.depositAmount) {
+        formData.append('depositAmount', values.depositAmount.toString());
+      }
       if (values.amenities) {
         formData.append('amenities', values.amenities);
       }
@@ -176,6 +179,7 @@ export const RoomsPage = () => {
       address: selectedHostel.address,
       price: selectedHostel.price,
       area: selectedHostel.area,
+      depositAmount: selectedHostel.depositAmount,
       description: selectedHostel.description,
       amenities: selectedHostel.amenities || '',
       contactPhone: selectedHostel.contactPhone,
@@ -233,6 +237,7 @@ export const RoomsPage = () => {
         description: values.description,
         price: values.price,
         area: values.area,
+        depositAmount: values.depositAmount,
         amenities: values.amenities || '',
         contactName: values.contactName || selectedHostel.contactName,
         contactPhone: values.contactPhone || selectedHostel.contactPhone,
@@ -316,7 +321,12 @@ export const RoomsPage = () => {
                           <span className="text-gray-500">Diện tích:</span>
                           <span className="font-semibold ml-1">{hostel.area}m²</span>
                         </div>
-
+                        {hostel.depositAmount && (
+                          <div className="col-span-2">
+                            <span className="text-gray-500">Tiền cọc:</span>
+                            <span className="font-semibold text-green-600 ml-1">{formatCurrency(hostel.depositAmount)}</span>
+                          </div>
+                        )}
                       </div>
                       <div className="border-t border-gray-200 pt-3 mb-3">
                         <p className="text-sm text-gray-500">
@@ -396,7 +406,12 @@ export const RoomsPage = () => {
                       <span className="text-gray-500">Diện tích:</span>
                       <div className="font-semibold">{selectedHostel.area}m²</div>
                     </div>
-
+                    {selectedHostel.depositAmount && (
+                      <div>
+                        <span className="text-gray-500">Tiền cọc:</span>
+                        <div className="font-semibold text-green-600">{formatCurrency(selectedHostel.depositAmount)}</div>
+                      </div>
+                    )}
                     <div>
                       <span className="text-gray-500">Ngày tạo:</span>
                       <div className="font-semibold">{formatDate(selectedHostel.createdAt)}</div>
@@ -508,6 +523,21 @@ export const RoomsPage = () => {
                 />
               </Form.Item>
             </div>
+
+            <Form.Item
+              label="Tiền cọc (VNĐ)"
+              name="depositAmount"
+              rules={[
+                { type: 'number', min: 0, message: 'Tiền cọc phải lớn hơn hoặc bằng 0!' },
+              ]}
+            >
+              <InputNumber
+                placeholder="1000000"
+                style={{ width: '100%' }}
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+              />
+            </Form.Item>
 
             <Form.Item
               label="Mô tả"
@@ -622,6 +652,21 @@ export const RoomsPage = () => {
                 />
               </Form.Item>
             </div>
+
+            <Form.Item
+              label="Tiền cọc (VNĐ)"
+              name="depositAmount"
+              rules={[
+                { type: 'number', min: 0, message: 'Tiền cọc phải lớn hơn hoặc bằng 0!' },
+              ]}
+            >
+              <InputNumber
+                placeholder="1000000"
+                style={{ width: '100%' }}
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+              />
+            </Form.Item>
 
             <Form.Item
               label="Mô tả"

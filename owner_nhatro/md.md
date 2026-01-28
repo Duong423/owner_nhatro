@@ -1,372 +1,465 @@
-# API Lấy Tất Cả Bookings Cho Owner
+# API CONTRACT SYSTEM - HỆ THỐNG HỢP ĐỒNG THUÊ NHÀ TRỌ
 
-## Endpoint
+## Tổng quan
+
+Hệ thống quản lý hợp đồng thuê nhà trọ, tích hợp với hệ thống Booking để tạo hợp đồng chính thức sau khi booking được xác nhận.
+
+## Luồng hoạt động
+
+1. **Booking được xác nhận** (status: CONFIRMED)
+2. **Owner tạo hợp đồng** từ booking (Contract status: PENDING)
+3. **Tenant/Owner ký hợp đồng** (Contract status: ACTIVE, Booking status: COMPLETED)
+4. **Khi hợp đồng kết thúc** (Contract status: TERMINATED, Hostel status: AVAILABLE)
+
+---
+
+## 1. TẠO HỢP ĐỒNG (OWNER)
+
+**Endpoint:** `POST /api/contracts/create`
+
+**Authorization:** Owner (có quyền OWNER hoặc ADMIN)
+
+**Điều kiện:** 
+- Booking phải ở trạng thái CONFIRMED
+- Chưa có hợp đồng cho booking này
+- User hiện tại phải là owner của hostel
+
+### Request Body
+
+```json
+{
+  "bookingId": 1,
+  "startDate": "2026-02-01",
+  "endDate": "2027-02-01",
+  "monthlyRent": 3000000,
+  "electricityCostPerUnit": 3500,
+  "waterCostPerUnit": 15000,
+  "serviceFee": 200000,
+  "paymentCycle": "MONTHLY",
+  "numberOfTenants": 2,
+  "terms": "1. Thanh toán tiền thuê vào ngày 5 hàng tháng\n2. Không được chuyển nhượng phòng\n3. Giữ gìn vệ sinh chung\n4. Báo trước 1 tháng nếu muốn chấm dứt hợp đồng",
+  "notes": "Khách hàng uy tín"
+}
 ```
-GET /api/bookings/owner/all
+
+### Request Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| bookingId | Long | ✅ | ID của booking đã confirmed |
+| startDate | LocalDate | ✅ | Ngày bắt đầu hợp đồng (yyyy-MM-dd) |
+| endDate | LocalDate | ✅ | Ngày kết thúc hợp đồng (phải sau startDate) |
+| monthlyRent | Double | ✅ | Giá thuê hàng tháng (VNĐ) |
+| electricityCostPerUnit | Double | ❌ | Giá điện/kWh (VNĐ) |
+| waterCostPerUnit | Double | ❌ | Giá nước/m³ (VNĐ) |
+| serviceFee | Double | ❌ | Phí dịch vụ khác (internet, rác, vệ sinh...) |
+| paymentCycle | String | ❌ | Chu kỳ thanh toán: MONTHLY/QUARTERLY/YEARLY (default: MONTHLY) |
+| numberOfTenants | Integer | ❌ | Số người ở (default: 1) |
+| terms | String | ❌ | Điều khoản hợp đồng (text dài) |
+| notes | String | ❌ | Ghi chú |
+
+### Response Success (201)
+
+```json
+{
+  "code": 201,
+  "message": "Contract created successfully",
+  "result": {
+    "contractId": 1,
+    "bookingId": 1,
+    "tenantId": 2,
+    "tenantName": "Nguyễn Văn A",
+    "tenantPhone": "0123456789",
+    "tenantEmail": "nguyenvana@gmail.com",
+    "landlordId": 3,
+    "landlordName": "Trần Thị B",
+    "landlordPhone": "0987654321",
+    "hostelId": 1,
+    "hostelName": "Phòng trọ ABC",
+    "hostelAddress": "123 Đường X, Quận Y, TP.HCM",
+    "startDate": "2026-02-01",
+    "endDate": "2027-02-01",
+    "monthlyRent": 3000000.00,
+    "depositAmount": 5000000.00,
+    "electricityCostPerUnit": 3500.00,
+    "waterCostPerUnit": 15000.00,
+    "serviceFee": 200000.00,
+    "paymentCycle": "MONTHLY",
+    "numberOfTenants": 2,
+    "terms": "1. Thanh toán tiền thuê vào ngày 5 hàng tháng...",
+    "signedDate": null,
+    "status": "PENDING",
+    "notes": "Khách hàng uy tín",
+    "createdAt": "2026-01-28T14:30:00",
+    "updatedAt": "2026-01-28T14:30:00"
+  }
+}
 ```
 
-## Mô tả
-API này cho phép **Owner** lấy danh sách tất cả bookings của tất cả các hostels mà họ sở hữu trong một lần gọi duy nhất.
+### Response Error (400)
 
-## Authorization
-Yêu cầu: **Owner role** và **Bearer Token**
-
-## Request
-
-### Headers
-```
-Authorization: Bearer {access_token}
-Content-Type: application/json
+```json
+{
+  "code": 400,
+  "message": "Error creating contract: Booking must be CONFIRMED to create contract. Current status: PENDING",
+  "result": null
+}
 ```
 
-### Parameters
-Không có parameters (API tự động lấy tất cả bookings dựa trên owner đang đăng nhập)
+---
 
-## Response
+## 2. XEM CHI TIẾT HỢP ĐỒNG
 
-### Success Response (200 OK)
+**Endpoint:** `GET /api/contracts/{contractId}`
+
+**Authorization:** Authenticated (Tenant hoặc Landlord của hợp đồng)
+
+### Response Success (200)
 
 ```json
 {
   "code": 200,
-  "message": "Retrieved all bookings successfully",
+  "message": "Contract retrieved successfully",
+  "result": {
+    "contractId": 1,
+    "bookingId": 1,
+    "tenantId": 2,
+    "tenantName": "Nguyễn Văn A",
+    "tenantPhone": "0123456789",
+    "tenantEmail": "nguyenvana@gmail.com",
+    "landlordId": 3,
+    "landlordName": "Trần Thị B",
+    "landlordPhone": "0987654321",
+    "hostelId": 1,
+    "hostelName": "Phòng trọ ABC",
+    "hostelAddress": "123 Đường X, Quận Y, TP.HCM",
+    "startDate": "2026-02-01",
+    "endDate": "2027-02-01",
+    "monthlyRent": 3000000.00,
+    "depositAmount": 5000000.00,
+    "electricityCostPerUnit": 3500.00,
+    "waterCostPerUnit": 15000.00,
+    "serviceFee": 200000.00,
+    "paymentCycle": "MONTHLY",
+    "numberOfTenants": 2,
+    "terms": "1. Thanh toán tiền thuê vào ngày 5 hàng tháng...",
+    "signedDate": "2026-01-29",
+    "status": "ACTIVE",
+    "notes": "Khách hàng uy tín",
+    "createdAt": "2026-01-28T14:30:00",
+    "updatedAt": "2026-01-29T10:15:00"
+  }
+}
+```
+
+---
+
+## 3. LẤY HỢP ĐỒNG THEO BOOKING
+
+**Endpoint:** `GET /api/contracts/booking/{bookingId}`
+
+**Authorization:** Authenticated
+
+**Use case:** Kiểm tra xem một booking đã có hợp đồng chưa
+
+### Response Success (200)
+
+```json
+{
+  "code": 200,
+  "message": "Contract retrieved successfully",
+  "result": { /* Contract object */ }
+}
+```
+
+### Response Error (404)
+
+```json
+{
+  "code": 404,
+  "message": "Error retrieving contract: Contract not found for booking ID: 1",
+  "result": null
+}
+```
+
+---
+
+## 4. DANH SÁCH HỢP ĐỒNG CỦA KHÁCH THUÊ
+
+**Endpoint:** `GET /api/contracts/my-contracts`
+
+**Authorization:** Authenticated (Tenant)
+
+**Use case:** Khách thuê xem tất cả hợp đồng của mình
+
+### Response Success (200)
+
+```json
+{
+  "code": 200,
+  "message": "Contracts retrieved successfully",
   "result": [
     {
+      "contractId": 1,
       "bookingId": 1,
-      "customerId": 5,
-      "customerName": "Nguyễn Văn A",
-      "customerPhone": "0901234567",
-      "customerEmail": "nguyenvana@gmail.com",
-      "hostelId": 1,
-      "hostelName": "Nhà trọ ABC",
-      "hostelAddress": "123 Đường XYZ, Quận 1",
-      "bookingDate": "2026-01-27T15:30:00",
-      "checkInDate": "2026-02-15T14:00:00",
-      "depositAmount": 900000,
-      "status": "CONFIRMED",
-      "notes": "Tôi sẽ đến lúc 2h chiều",
-      "payment": {
-        "paymentId": 1,
-        "amount": 900000,
-        "paymentMethod": "BANKING",
-        "status": "COMPLETED",
-        "transactionId": "TXN-1738047000000",
-        "note": "Deposit payment for booking #1",
-        "paidAt": "2026-01-27T15:30:00"
-      },
-      "createdAt": "2026-01-27T15:30:00"
+      "tenantId": 2,
+      "tenantName": "Nguyễn Văn A",
+      "landlordName": "Trần Thị B",
+      "hostelName": "Phòng trọ ABC",
+      "hostelAddress": "123 Đường X",
+      "startDate": "2026-02-01",
+      "endDate": "2027-02-01",
+      "monthlyRent": 3000000.00,
+      "status": "ACTIVE"
+      /* ... other fields */
     },
     {
-      "bookingId": 2,
-      "customerId": 8,
-      "customerName": "Trần Thị B",
-      "customerPhone": "0912345678",
-      "customerEmail": "tranthib@gmail.com",
-      "hostelId": 3,
-      "hostelName": "Nhà trọ XYZ",
-      "hostelAddress": "456 Đường ABC, Quận 2",
-      "bookingDate": "2026-01-26T10:00:00",
-      "checkInDate": "2026-03-01T10:00:00",
-      "depositAmount": 1200000,
-      "status": "CONFIRMED",
-      "notes": "Cần hỗ trợ chuyển đồ",
-      "payment": {
-        "paymentId": 2,
-        "amount": 1200000,
-        "paymentMethod": "MOMO",
-        "status": "COMPLETED",
-        "transactionId": "TXN-1737960000000",
-        "note": "Deposit payment for booking #2",
-        "paidAt": "2026-01-26T10:00:00"
-      },
-      "createdAt": "2026-01-26T10:00:00"
+      "contractId": 2,
+      "status": "TERMINATED"
+      /* ... */
     }
   ]
 }
 ```
 
-### Success với danh sách rỗng (200 OK)
-Nếu owner chưa có booking nào:
+---
+
+## 5. DANH SÁCH HỢP ĐỒNG CỦA CHỦ NHÀ
+
+**Endpoint:** `GET /api/contracts/owner/all`
+
+**Authorization:** Owner (OWNER hoặc ADMIN)
+
+**Use case:** Chủ nhà xem tất cả hợp đồng của các phòng trọ mình quản lý
+
+### Response Success (200)
+
 ```json
 {
   "code": 200,
-  "message": "Retrieved all bookings successfully",
-  "result": []
+  "message": "Contracts retrieved successfully",
+  "result": [
+    {
+      "contractId": 1,
+      "bookingId": 1,
+      "tenantName": "Nguyễn Văn A",
+      "tenantPhone": "0123456789",
+      "hostelName": "Phòng trọ ABC",
+      "startDate": "2026-02-01",
+      "endDate": "2027-02-01",
+      "monthlyRent": 3000000.00,
+      "status": "ACTIVE"
+      /* ... */
+    },
+    {
+      "contractId": 3,
+      "tenantName": "Lê Văn C",
+      "hostelName": "Phòng trọ XYZ",
+      "status": "PENDING"
+      /* ... */
+    }
+  ]
 }
 ```
 
-### Error Response (401 Unauthorized)
-Khi không có token hoặc token không hợp lệ:
+---
+
+## 6. KÝ HỢP ĐỒNG
+
+**Endpoint:** `PUT /api/contracts/{contractId}/sign`
+
+**Authorization:** Authenticated (Tenant hoặc Landlord)
+
+**Điều kiện:** 
+- Hợp đồng phải ở trạng thái PENDING
+- Chỉ tenant hoặc landlord mới được ký
+
+**Hiệu ứng:**
+- ✅ Contract status → ACTIVE
+- ✅ Booking status → COMPLETED
+- ✅ Set signedDate = ngày hiện tại
+
+### Response Success (200)
+
 ```json
 {
-  "code": 401,
-  "message": "Unauthorized",
-  "result": null
+  "code": 200,
+  "message": "Contract signed successfully",
+  "result": {
+    "contractId": 1,
+    "status": "ACTIVE",
+    "signedDate": "2026-01-29",
+    /* ... other fields */
+  }
 }
 ```
 
-### Error Response (403 Forbidden)
-Khi user không phải là Owner:
-```json
-{
-  "code": 403,
-  "message": "Access denied. Owner role required",
-  "result": null
-}
-```
+### Response Error (400)
 
-### Error Response (400 Bad Request)
-Lỗi khác:
 ```json
 {
   "code": 400,
-  "message": "Error retrieving bookings: {error_detail}",
+  "message": "Error signing contract: Only PENDING contracts can be signed",
   "result": null
 }
 ```
 
-## Response Fields
+---
 
-### Booking Object
-| Field | Type | Description |
-|-------|------|-------------|
-| `bookingId` | Long | ID của booking |
-| `customerId` | Long | ID của khách hàng đặt phòng |
-| `customerName` | String | Tên khách hàng |
-| `customerPhone` | String | Số điện thoại khách hàng |
-| `customerEmail` | String | Email khách hàng |
-| `hostelId` | Long | ID của hostel được đặt |
-| `hostelName` | String | Tên hostel |
-| `hostelAddress` | String | Địa chỉ hostel |
-| `bookingDate` | DateTime | Ngày tạo booking |
-| `checkInDate` | DateTime | Ngày dự kiến check-in |
-| `depositAmount` | BigDecimal | Số tiền cọc (VNĐ) |
-| `status` | String | Trạng thái booking |
-| `notes` | String | Ghi chú từ khách hàng |
-| `payment` | Object | Thông tin thanh toán |
-| `createdAt` | DateTime | Ngày tạo |
+## 7. CHẤM DỨT HỢP ĐỒNG
 
-### Payment Object
-| Field | Type | Description |
-|-------|------|-------------|
-| `paymentId` | Long | ID của payment |
-| `amount` | BigDecimal | Số tiền đã thanh toán (VNĐ) |
-| `paymentMethod` | String | Phương thức thanh toán |
-| `status` | String | Trạng thái thanh toán |
-| `transactionId` | String | Mã giao dịch |
-| `note` | String | Ghi chú |
-| `paidAt` | DateTime | Thời gian thanh toán |
+**Endpoint:** `PUT /api/contracts/{contractId}/terminate`
 
-## Booking Status Values
-- `PENDING` - Đang chờ thanh toán
-- `CONFIRMED` - Đã xác nhận (đã thanh toán tiền cọc)
-- `CANCELLED` - Đã hủy
-- `COMPLETED` - Đã hoàn thành
+**Authorization:** Owner (chỉ landlord mới được chấm dứt)
 
-## Payment Status Values
-- `PENDING` - Chờ thanh toán
-- `COMPLETED` - Đã thanh toán thành công
-- `FAILED` - Thanh toán thất bại
-- `REFUNDED` - Đã hoàn tiền
+**Query Parameters:**
+- `reason` (optional): Lý do chấm dứt hợp đồng
 
-## Payment Methods
-- `CASH` - Tiền mặt
-- `BANKING` - Chuyển khoản ngân hàng
-- `MOMO` - Ví MoMo
-- `VNPAY` - Ví VNPay
+**Điều kiện:**
+- Hợp đồng chưa bị TERMINATED
+- Chỉ landlord mới có quyền
 
-## Frontend Implementation Example
+**Hiệu ứng:**
+- ✅ Contract status → TERMINATED
+- ✅ Hostel status → AVAILABLE (phòng có thể cho thuê lại)
+- ✅ Lưu lý do vào notes
 
-### JavaScript (Fetch API)
-```javascript
-async function getAllBookingsForOwner() {
-  const accessToken = localStorage.getItem('accessToken');
-  
-  try {
-    const response = await fetch('http://localhost:8080/api/bookings/owner/all', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    const data = await response.json();
-    
-    if (data.code === 200) {
-      console.log('Bookings:', data.result);
-      return data.result;
-    } else {
-      console.error('Error:', data.message);
-      throw new Error(data.message);
-    }
-  } catch (error) {
-    console.error('Failed to fetch bookings:', error);
-    throw error;
+### Request
+
+```
+PUT /api/contracts/1/terminate?reason=Khách thuê vi phạm hợp đồng
+```
+
+### Response Success (200)
+
+```json
+{
+  "code": 200,
+  "message": "Contract terminated successfully",
+  "result": {
+    "contractId": 1,
+    "status": "TERMINATED",
+    "notes": "Khách hàng uy tín\nTerminated: Khách thuê vi phạm hợp đồng",
+    /* ... other fields */
   }
 }
 ```
 
-### Axios
-```javascript
-import axios from 'axios';
+### Response Error (400)
 
-const getAllBookingsForOwner = async () => {
-  try {
-    const response = await axios.get('http://localhost:8080/api/bookings/owner/all', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-      }
-    });
-    
-    if (response.data.code === 200) {
-      return response.data.result;
-    }
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    throw error;
-  }
+```json
+{
+  "code": 400,
+  "message": "Error terminating contract: Only landlord can terminate contract",
+  "result": null
+}
+```
+
+---
+
+## Contract Status Flow
+
+```
+PENDING → ACTIVE → TERMINATED/EXPIRED
+   ↓         ↓           ↓
+(Tạo mới) (Ký HĐ)  (Kết thúc)
+          Booking      Hostel
+          COMPLETED   AVAILABLE
+```
+
+## Trạng thái hợp đồng
+
+| Status | Description | Action |
+|--------|-------------|--------|
+| **PENDING** | Chờ ký | Vừa tạo, chưa có chữ ký |
+| **ACTIVE** | Đang hoạt động | Đã ký, đang trong thời hạn |
+| **EXPIRED** | Hết hạn | Hợp đồng đã hết hạn tự nhiên |
+| **TERMINATED** | Đã chấm dứt | Bị chấm dứt trước hạn |
+
+---
+
+## Validation Rules
+
+### Tạo hợp đồng:
+- ✅ Booking phải ở trạng thái CONFIRMED
+- ✅ Chưa có hợp đồng cho booking này
+- ✅ endDate phải sau startDate
+- ✅ monthlyRent > 0
+- ✅ Chỉ owner của hostel mới tạo được
+
+### Ký hợp đồng:
+- ✅ Hợp đồng phải PENDING
+- ✅ Chỉ tenant hoặc landlord được ký
+
+### Chấm dứt hợp đồng:
+- ✅ Hợp đồng chưa TERMINATED
+- ✅ Chỉ landlord được chấm dứt
+
+---
+
+## Error Codes
+
+| Code | Message | Cause |
+|------|---------|-------|
+| 400 | Booking must be CONFIRMED | Booking chưa được xác nhận |
+| 400 | Contract already exists | Booking đã có hợp đồng |
+| 400 | End date must be after start date | Ngày kết thúc không hợp lệ |
+| 400 | Only PENDING contracts can be signed | Hợp đồng đã được ký rồi |
+| 400 | Only landlord can terminate | Không có quyền chấm dứt |
+| 404 | Contract not found | Không tìm thấy hợp đồng |
+| 403 | You don't have permission | Không có quyền truy cập |
+
+---
+
+## Notes cho Frontend
+
+### 1. Hiển thị Contract Status:
+```javascript
+const statusColors = {
+  PENDING: 'yellow',    // Chờ ký
+  ACTIVE: 'green',      // Đang hoạt động
+  EXPIRED: 'gray',      // Hết hạn
+  TERMINATED: 'red'     // Đã chấm dứt
 };
 ```
 
-### React Example with Hooks
-```jsx
-import { useState, useEffect } from 'react';
-import axios from 'axios';
+### 2. Disable button "Ký hợp đồng" nếu:
+- Status không phải PENDING
+- User không phải tenant hoặc landlord
 
-function OwnerBookingsList() {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+### 3. Chỉ hiển thị button "Chấm dứt" nếu:
+- User là landlord
+- Status không phải TERMINATED
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const token = localStorage.getItem('accessToken');
-        const response = await axios.get(
-          'http://localhost:8080/api/bookings/owner/all',
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-        
-        if (response.data.code === 200) {
-          setBookings(response.data.result);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBookings();
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-
-  return (
-    <div className="bookings-list">
-      <h2>Tất cả Bookings ({bookings.length})</h2>
-      {bookings.length === 0 ? (
-        <p>Chưa có booking nào</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Hostel</th>
-              <th>Khách hàng</th>
-              <th>Ngày check-in</th>
-              <th>Tiền cọc</th>
-              <th>Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map(booking => (
-              <tr key={booking.bookingId}>
-                <td>{booking.bookingId}</td>
-                <td>{booking.hostelName}</td>
-                <td>
-                  {booking.customerName}<br/>
-                  {booking.customerPhone}
-                </td>
-                <td>{new Date(booking.checkInDate).toLocaleDateString('vi-VN')}</td>
-                <td>{booking.depositAmount.toLocaleString('vi-VN')} đ</td>
-                <td>
-                  <span className={`status-${booking.status.toLowerCase()}`}>
-                    {booking.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
-  );
-}
-```
-
-## Curl Command (Testing)
-```bash
-curl -X GET http://localhost:8080/api/bookings/owner/all \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json"
-```
-
-## Use Cases
-
-1. **Dashboard Overview**: Hiển thị tổng quan tất cả bookings cho owner
-2. **Revenue Tracking**: Tính tổng doanh thu từ tiền cọc
-3. **Booking Management**: Quản lý tất cả bookings từ một nơi
-4. **Statistics**: Thống kê số lượng booking theo trạng thái
-5. **Customer Management**: Xem danh sách tất cả khách hàng đã đặt phòng
-
-## Notes
-
-- API này chỉ dành cho **Owner role**
-- Tự động lấy tất cả bookings của tất cả hostels mà owner sở hữu
-- Trả về array rỗng nếu owner chưa có booking nào
-- Mỗi booking bao gồm đầy đủ thông tin payment
-- Dữ liệu được sắp xếp theo thứ tự mặc định từ database
-- **Lưu ý**: 1 hostel chỉ có tối đa 1 booking (OneToOne relationship)
-
-## Error Handling Best Practices
-
+### 4. Format số tiền:
 ```javascript
-async function fetchBookingsWithErrorHandling() {
-  try {
-    const response = await fetch('http://localhost:8080/api/bookings/owner/all', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    const data = await response.json();
-    
-    switch(data.code) {
-      case 200:
-        return data.result;
-      case 401:
-        // Redirect to login
-        window.location.href = '/login';
-        break;
-      case 403:
-        alert('Bạn không có quyền truy cập trang này');
-        break;
-      case 400:
-        alert(`Lỗi: ${data.message}`);
-        break;
-      default:
-        alert('Có lỗi xảy ra, vui lòng thử lại');
-    }
-  } catch (error) {
-    console.error('Network error:', error);
-    alert('Không thể kết nối đến server');
-  }
-}
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(amount);
+};
 ```
+
+### 5. Kiểm tra hợp đồng sắp hết hạn:
+```javascript
+const isExpiringSoon = (endDate) => {
+  const daysLeft = Math.ceil((new Date(endDate) - new Date()) / (1000 * 60 * 60 * 24));
+  return daysLeft <= 30 && daysLeft > 0;
+};
+```
+
+---
+
+## Integration Checklist
+
+- [ ] Tạo form tạo hợp đồng với validation
+- [ ] Hiển thị danh sách hợp đồng (tenant view)
+- [ ] Hiển thị danh sách hợp đồng (owner view)
+- [ ] Chi tiết hợp đồng với PDF export
+- [ ] Button ký hợp đồng (với confirm dialog)
+- [ ] Button chấm dứt hợp đồng (với reason input)
+- [ ] Filter theo status (PENDING/ACTIVE/TERMINATED)
+- [ ] Search theo tên tenant/hostel
+- [ ] Notification khi hợp đồng sắp hết hạn
+- [ ] Link từ booking detail → contract detail
