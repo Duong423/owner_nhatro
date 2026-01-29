@@ -5,20 +5,23 @@ export interface Contract {
   bookingId: number;
   
   // Thông tin bên A (chủ nhà)
-  landlordId: number;
-  landlordName: string;
-  landlordPhone: string;
+  ownerId: number;
+  ownerName: string;
+  phoneNumberOwner: string;
   
   // Thông tin bên B (người thuê)
   tenantId: number;
   tenantName: string;
-  tenantPhone: string;
+  phoneNumberTenant: string;
   tenantEmail?: string;
   
   // Thông tin phòng trọ
   hostelId: number;
   hostelName: string;
   hostelAddress: string;
+  hostelPrice: number;
+  hostelArea: number;
+  hostelAmenities: string;
   
   // Thông tin tài chính
   monthlyRent: number;
@@ -46,8 +49,14 @@ export interface Contract {
   updatedAt?: string;
 }
 
-export interface CreateContractDto {
+export interface CreateContractDto  {
+  
   bookingId: number;
+  ownerName: string;
+  phoneNumberOwner: string;
+  tenantName: string;
+  phoneNumberTenant: string;
+  tenantEmail?: string;
   startDate: string;
   endDate: string;
   monthlyRent: number;
@@ -61,6 +70,12 @@ export interface CreateContractDto {
 }
 
 export interface UpdateContractDto {
+  tenantName?: string;
+  phoneNumberTenant?: string;
+  tenantEmail?: string;
+  ownerName?: string;
+  phoneNumberOwner?: string;
+  startDate?: string;
   status?: 'ACTIVE' | 'EXPIRED' | 'TERMINATED';
   endDate?: string;
   monthlyRent?: number;

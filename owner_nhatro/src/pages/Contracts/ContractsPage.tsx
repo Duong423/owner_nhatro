@@ -17,11 +17,11 @@ export const ContractsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const bookingId = searchParams.get('bookingId');
-  
+
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  
+
   // Form states
   const [isCreateMode, setIsCreateMode] = useState(!!bookingId);
   const [createLoading, setCreateLoading] = useState(false);
@@ -29,16 +29,45 @@ export const ContractsPage = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [hostelDetail, setHostelDetail] = useState<HostelDetail | null>(null);
   const [bookingHasContract, setBookingHasContract] = useState(false);
-  
+  const loadedBookingRef = useRef<number | null>(null);
+
   // Detail modal
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [detailBooking, setDetailBooking] = useState<Booking | null>(null);
-  const [detailHostel, setDetailHostel] = useState<HostelDetail | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editForm] = Form.useForm();
 
-  // Prevent duplicate load in StrictMode
-  const loadedBookingRef = useRef<number | null>(null);
+  // When entering edit mode, populate the edit form from selectedContract
+  useEffect(() => {
+    if (isEditMode && selectedContract) {
+      try {
+        console.log('Populating edit form with selectedContract:', selectedContract);
+        // reset before set to avoid stale values
+        editForm.resetFields();
+        editForm.setFieldsValue({
+          ownerName: selectedContract.ownerName,
+          phoneNumberOwner: selectedContract.phoneNumberOwner,
+          tenantName: selectedContract.tenantName,
+          phoneNumberTenant: selectedContract.phoneNumberTenant,
+          tenantEmail: selectedContract.tenantEmail,
+          startDate: selectedContract.startDate ? dayjs(selectedContract.startDate) : null,
+          endDate: selectedContract.endDate ? dayjs(selectedContract.endDate) : null,
+          monthlyRent: selectedContract.monthlyRent,
+          depositAmount: selectedContract.depositAmount,
+          electricityCostPerUnit: selectedContract.electricityCostPerUnit,
+          waterCostPerUnit: selectedContract.waterCostPerUnit,
+          serviceFee: selectedContract.serviceFee,
+          paymentCycle: selectedContract.paymentCycle,
+          numberOfTenants: selectedContract.numberOfTenants,
+          terms: selectedContract.terms,
+          notes: selectedContract.notes,
+        });
+        console.log('Edit form values after setFieldsValue:', editForm.getFieldsValue());
+      } catch (e) {
+        console.error('Error populating edit form:', e);
+      }
+    }
+  }, [isEditMode, selectedContract, editForm]);
 
   useEffect(() => {
     fetchContracts();
@@ -81,7 +110,7 @@ export const ContractsPage = () => {
       }
       // Load booking data
       const booking = await bookingService.getBookingById(id);
-      
+
       // Check if customer exists (not walk-in customer)
       if (!booking.customerId || booking.customerId === null) {
         setIsCreateMode(false);
@@ -94,19 +123,24 @@ export const ContractsPage = () => {
         });
         return;
       }
-      
+
       setSelectedBooking(booking);
-      
+
       // Load hostel detail
       const hostel = await roomService.getHostelDetail(booking.hostelId);
       setHostelDetail(hostel);
-      
-      // Pre-fill form
+
+      // Pre-fill form with default values
       const startDate = dayjs();
       const endDate = startDate.add(12, 'month');
-      
+
       form.setFieldsValue({
         bookingId: booking.bookingId,
+        ownerName: hostel.ownerName || '',
+        phoneNumberOwner: hostel.contactPhone || '',
+        tenantName: booking.customerName || '',
+        phoneNumberTenant: booking.customerPhone || '',
+        tenantEmail: booking.customerEmail || '',
         startDate: startDate,
         endDate: endDate,
         monthlyRent: 3000000,
@@ -118,7 +152,7 @@ export const ContractsPage = () => {
         terms: '1. Thanh toán tiền thuê vào ngày 5 hàng tháng\n2. Không được chuyển nhượng phòng\n3. Giữ gìn vệ sinh chung\n4. Báo trước 1 tháng nếu muốn chấm dứt hợp đồng',
         notes: '',
       });
-      
+
       setIsCreateMode(true);
     } catch (err: any) {
       Modal.error({
@@ -140,6 +174,11 @@ export const ContractsPage = () => {
 
       const contractData: CreateContractDto = {
         bookingId: values.bookingId,
+        ownerName: values.ownerName,
+        phoneNumberOwner: values.phoneNumberOwner,
+        tenantName: values.tenantName,
+        phoneNumberTenant: values.phoneNumberTenant,
+        tenantEmail: values.tenantEmail,
         startDate: values.startDate.format('YYYY-MM-DD'),
         endDate: values.endDate.format('YYYY-MM-DD'),
         monthlyRent: values.monthlyRent,
@@ -153,15 +192,15 @@ export const ContractsPage = () => {
       };
 
       await contractService.createContract(contractData);
-      
+
       Modal.success({
         title: 'Tạo hợp đồng thành công!',
         content: 'Hợp đồng đã được tạo và lưu vào hệ thống.',
         onOk: () => {
-          setIsCreateMode(false);
-          form.resetFields();
-          navigate('/contracts');
-          fetchContracts();
+          setIsCreateMode(false);//gọi mode đóng forrm
+          form.resetFields(); // reset fields
+          navigate('/contracts'); // chuyển sang trang contracts
+          fetchContracts(); //fetch ds trang contracts
         }
       });
     } catch (err: any) {
@@ -181,37 +220,11 @@ export const ContractsPage = () => {
     }
   };
 
-  const handleContractDurationChange = (duration: number | null) => {
-    if (!duration) return;
-    const startDate = form.getFieldValue('startDate');
-    if (startDate) {
-      const endDate = dayjs(startDate).add(duration, 'month');
-      form.setFieldValue('endDate', endDate);
-    }
-  };
 
-  const handleViewDetail = async (contract: Contract) => {
+  const handleViewDetail = (contract: Contract) => {
     setSelectedContract(contract);
+    setIsEditMode(false);
     setDetailModalOpen(true);
-    setDetailLoading(true);
-    
-    try {
-      // Fetch booking data
-      const bookingData = await bookingService.getBookingById(contract.bookingId);
-      setDetailBooking(bookingData);
-      
-      // Fetch hostel data
-      const hostelData = await roomService.getHostelDetail(bookingData.hostelId);
-      setDetailHostel(hostelData);
-    } catch (err: any) {
-      console.error('Error loading detail data:', err);
-      Modal.error({
-        title: 'Không thể tải thông tin chi tiết',
-        content: err?.response?.data?.message || err.message,
-      });
-    } finally {
-      setDetailLoading(false);
-    }
   };
 
   const handleSignContract = (contractId: number) => {
@@ -310,7 +323,7 @@ export const ContractsPage = () => {
       render: (name, record) => (
         <div>
           <div className="font-semibold">{name}</div>
-          <div className="text-xs text-gray-500">{record.tenantPhone}</div>
+          <div className="text-xs text-gray-500">{record.phoneNumberTenant}</div>
         </div>
       ),
     },
@@ -422,7 +435,7 @@ export const ContractsPage = () => {
           {/* Card 1: Thông tin nhà trọ */}
           {hostelDetail && (
             <Card className="mb-4" title="Thông tin nhà trọ" size="small">
-              <Descriptions column={2} size="small" bordered>
+              <Descriptions size="small" bordered>
                 <Descriptions.Item label="Tên nhà trọ">{hostelDetail.name}</Descriptions.Item>
                 <Descriptions.Item label="Diện tích">{hostelDetail.area}m²</Descriptions.Item>
                 <Descriptions.Item label="Địa chỉ" span={2}>{hostelDetail.address}</Descriptions.Item>
@@ -437,44 +450,68 @@ export const ContractsPage = () => {
             </Card>
           )}
 
-          {/* Card 2: Thông tin chủ nhà */}
-          {hostelDetail && (
-            <Card className="mb-4" title="Bên A - Thông tin chủ nhà" size="small">
-              <Descriptions column={2} size="small" bordered>
-                <Descriptions.Item label="Tên chủ nhà">{hostelDetail.ownerName}</Descriptions.Item>
-                <Descriptions.Item label="Số điện thoại">{hostelDetail.contactPhone}</Descriptions.Item>
-                <Descriptions.Item label="Email">{hostelDetail.contactEmail || 'N/A'}</Descriptions.Item>
-                <Descriptions.Item label="Người liên hệ">{hostelDetail.contactName}</Descriptions.Item>
-              </Descriptions>
-            </Card>
-          )}
-
-          {/* Card 3: Thông tin khách hàng */}
-          {selectedBooking && (
-            <Card className="mb-4" title="Bên B - Thông tin khách hàng" size="small">
-              <Descriptions column={2} size="small" bordered>
-                <Descriptions.Item label="Họ tên">{selectedBooking.customerName}</Descriptions.Item>
-                <Descriptions.Item label="Số điện thoại">{selectedBooking.customerPhone}</Descriptions.Item>
-                <Descriptions.Item label="Email">{selectedBooking.customerEmail || 'N/A'}</Descriptions.Item>
-                <Descriptions.Item label="Ngày đặt">
-                  {formatDate(selectedBooking.bookingDate)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Ngày nhận phòng">
-                  {formatDate(selectedBooking.checkInDate)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Tiền đặt cọc">
-                  <span className="font-semibold text-green-600">{formatCurrency(selectedBooking.depositAmount)}</span>
-                </Descriptions.Item>
-              </Descriptions>
-            </Card>
-          )}
-
-          {/* Card 4: Form điền thông tin hợp đồng */}
+          {/* Form điền thông tin hợp đồng */}
           <Form
             form={form}
             layout="vertical"
             onFinish={handleCreateContract}
           >
+            {/* Card 2: Thông tin chủ nhà - Input */}
+            <Card title="Bên A - Thông tin chủ nhà" className="mb-4" size="small">
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  label="Tên chủ nhà"
+                  name="ownerName"
+                  rules={[{ required: true, message: 'Vui lòng nhập tên chủ nhà!' }]}
+                >
+                  <Input placeholder="Nhập tên chủ nhà" />
+                </Form.Item>
+                <Form.Item
+                  label="Số điện thoại chủ nhà"
+                  name="phoneNumberOwner"
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                    { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải có 10 chữ số!' }
+                  ]}
+                >
+                  <Input placeholder="0123456789" />
+                </Form.Item>
+              </div>
+            </Card>
+
+            {/* Card 3: Thông tin khách hàng - Input */}
+            <Card title="Bên B - Thông tin khách hàng" className="mb-4" size="small">
+              <div className="grid grid-cols-2 gap-4">
+                <Form.Item
+                  label="Họ tên khách hàng"
+                  name="tenantName"
+                  rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}
+                >
+                  <Input placeholder="Nhập họ tên khách hàng" />
+                </Form.Item>
+                <Form.Item
+                  label="Số điện thoại khách hàng"
+                  name="phoneNumberTenant"
+                  rules={[
+                    { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                    { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải có 10 chữ số!' }
+                  ]}
+                >
+                  <Input placeholder="0987654321" />
+                </Form.Item>
+                <Form.Item
+                  label="Email khách hàng"
+                  name="tenantEmail"
+                  rules={[
+                    { type: 'email', message: 'Email không hợp lệ!' }
+                  ]}
+                >
+                  <Input placeholder="email@example.com" />
+                </Form.Item>
+              </div>
+            </Card>
+
+            {/* Card 4: Thông tin hợp đồng */}
             <Card title="Thông tin hợp đồng" className="mb-4" size="small">
               <div className="grid grid-cols-2 gap-4">
                 <Form.Item
@@ -499,7 +536,7 @@ export const ContractsPage = () => {
                     placeholder="Chọn ngày"
                   />
                 </Form.Item>
-                
+
                 <Form.Item
                   label="Tiền thuê hàng tháng (VNĐ)"
                   name="monthlyRent"
@@ -512,7 +549,7 @@ export const ContractsPage = () => {
                     parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
                   />
                 </Form.Item>
-                
+
                 <Form.Item
                   label="Giá điện (VNĐ/kWh)"
                   name="electricityCostPerUnit"
@@ -523,7 +560,7 @@ export const ContractsPage = () => {
                     placeholder="3500"
                   />
                 </Form.Item>
-                
+
                 <Form.Item
                   label="Giá nước (VNĐ/m³)"
                   name="waterCostPerUnit"
@@ -534,7 +571,7 @@ export const ContractsPage = () => {
                     placeholder="15000"
                   />
                 </Form.Item>
-                
+
                 <Form.Item
                   label="Phí dịch vụ (VNĐ)"
                   name="serviceFee"
@@ -547,7 +584,7 @@ export const ContractsPage = () => {
                     parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
                   />
                 </Form.Item>
-                
+
                 <Form.Item
                   label="Chu kỳ thanh toán"
                   name="paymentCycle"
@@ -559,7 +596,7 @@ export const ContractsPage = () => {
                     <Select.Option value="YEARLY">Hàng năm</Select.Option>
                   </Select>
                 </Form.Item>
-                
+
                 <Form.Item
                   label="Số lượng người thuê"
                   name="numberOfTenants"
@@ -572,7 +609,7 @@ export const ContractsPage = () => {
                   />
                 </Form.Item>
               </div>
-              
+
               <Form.Item
                 label="Điều khoản hợp đồng"
                 name="terms"
@@ -582,7 +619,7 @@ export const ContractsPage = () => {
                   placeholder="Nhập điều khoản hợp đồng..."
                 />
               </Form.Item>
-              
+
               <Form.Item
                 label="Ghi chú"
                 name="notes"
@@ -617,7 +654,8 @@ export const ContractsPage = () => {
     );
   }
 
-  // Render list view
+  // Render list view chi tiết hợp đồng
+
   return (
     <MainLayout>
       <div className="contracts-page">
@@ -648,100 +686,186 @@ export const ContractsPage = () => {
           open={detailModalOpen}
           onCancel={() => {
             setDetailModalOpen(false);
-            setDetailBooking(null);
-            setDetailHostel(null);
+            setSelectedContract(null);
+            setIsEditMode(false);
+            editForm.resetFields();
           }}
           footer={null}
           title="Chi tiết hợp đồng"
           width={900}
         >
-          {detailLoading ? (
-            <div className="text-center py-8">
-              <Space direction="vertical">
-                <div>Đang tải thông tin...</div>
-              </Space>
-            </div>
-          ) : selectedContract && detailBooking && detailHostel ? (
+          {selectedContract ? (
             <div>
-              {/* Card 1: Thông tin nhà trọ */}
-              <Card className="mb-4" title="Thông tin nhà trọ" size="small">
-                <Descriptions column={2} size="small">
-                  <Descriptions.Item label="Tên nhà trọ">{detailHostel.name}</Descriptions.Item>
-                  <Descriptions.Item label="Chủ nhà">{detailHostel.ownerName}</Descriptions.Item>
-                  <Descriptions.Item label="Địa chỉ" span={2}>{detailHostel.address}</Descriptions.Item>
-                  <Descriptions.Item label="Diện tích">{detailHostel.area}m²</Descriptions.Item>
-                  <Descriptions.Item label="Giá thuê">{formatCurrency(detailHostel.price)}/tháng</Descriptions.Item>
-                  <Descriptions.Item label="Đặt cọc">{detailHostel.depositAmount ? formatCurrency(detailHostel.depositAmount) : 'N/A'}</Descriptions.Item>
-                  <Descriptions.Item label="Tiện nghi">{detailHostel.amenities || 'N/A'}</Descriptions.Item>
-                </Descriptions>
-              </Card>
 
-              {/* Card 2: Thông tin liên hệ */}
-              <Card className="mb-4" title="Thông tin liên hệ chủ nhà" size="small">
-                <Descriptions column={2} size="small">
-                  <Descriptions.Item label="Tên liên hệ">{detailHostel.contactName}</Descriptions.Item>
-                  <Descriptions.Item label="Số điện thoại">{detailHostel.contactPhone}</Descriptions.Item>
-                  <Descriptions.Item label="Email">{detailHostel.contactEmail || 'N/A'}</Descriptions.Item>
-                </Descriptions>
-              </Card>
+              {isEditMode ? (
+                <Form
+                  key={selectedContract ? `edit-${selectedContract.contractId}` : 'edit'}
+                  form={editForm}
+                  layout="vertical"
+                  initialValues={selectedContract ? {
+                    ownerName: selectedContract.ownerName,
+                    phoneNumberOwner: selectedContract.phoneNumberOwner,
+                    tenantName: selectedContract.tenantName,
+                    phoneNumberTenant: selectedContract.phoneNumberTenant,
+                    tenantEmail: selectedContract.tenantEmail,
+                    startDate: selectedContract.startDate ? dayjs(selectedContract.startDate) : null,
+                    endDate: selectedContract.endDate ? dayjs(selectedContract.endDate) : null,
+                    monthlyRent: selectedContract.monthlyRent,
+                    depositAmount: selectedContract.depositAmount,
+                    electricityCostPerUnit: selectedContract.electricityCostPerUnit,
+                    waterCostPerUnit: selectedContract.waterCostPerUnit,
+                    serviceFee: selectedContract.serviceFee,
+                    paymentCycle: selectedContract.paymentCycle,
+                    numberOfTenants: selectedContract.numberOfTenants,
+                    terms: selectedContract.terms,
+                    notes: selectedContract.notes,
+                  } : undefined}
+                  onFinish={async (values) => {
+                    try {
+                      const updateDto = {
+                        ...values,
+                        startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : undefined,
+                        endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : undefined,
+                      };
+                      await contractService.updateContract(selectedContract.contractId, updateDto);
+                      Modal.success({
+                        title: 'Cập nhật thành công',
+                        onOk: () => {
+                          setIsEditMode(false);
+                          editForm.resetFields();
+                          // Reload contract list and detail
+                          fetchContracts();
+                        }
+                      });
+                    } catch (err: any) {
+                      Modal.error({
+                        title: 'Cập nhật thất bại',
+                        content: err?.response?.data?.message || err.message,
+                      });
+                    }
+                  }}
+                >
+                  <Card className="mb-4" title="Chỉnh sửa hợp đồng" size="small">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Form.Item label="Tên chủ nhà" name="ownerName" rules={[{ required: true, message: 'Vui lòng nhập tên chủ nhà!' }]}>{<Input />}</Form.Item>
+                      <Form.Item label="Số điện thoại chủ nhà" name="phoneNumberOwner" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }, { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải có 10 chữ số!' }]}>{<Input />}</Form.Item>
+                      <Form.Item label="Họ tên người thuê" name="tenantName" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}>{<Input />}</Form.Item>
+                      <Form.Item label="Số điện thoại người thuê" name="phoneNumberTenant" rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }, { pattern: /^[0-9]{10}$/, message: 'Số điện thoại phải có 10 chữ số!' }]}>{<Input />}</Form.Item>
+                      <Form.Item label="Email người thuê" name="tenantEmail" rules={[{ type: 'email', message: 'Email không hợp lệ!' }]}>{<Input />}</Form.Item>
+                      <Form.Item label="Ngày bắt đầu" name="startDate" rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}>{<DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />}</Form.Item>
+                      <Form.Item label="Ngày kết thúc" name="endDate" rules={[{ required: true, message: 'Vui lòng chọn ngày!' }]}>{<DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />}</Form.Item>
+                      <Form.Item label="Tiền thuê/tháng" name="monthlyRent" rules={[{ required: true, message: 'Vui lòng nhập tiền thuê!' }]}>{<InputNumber style={{ width: '100%' }} />}</Form.Item>
+                      <Form.Item label="Tiền đặt cọc" name="depositAmount" rules={[{ required: true, message: 'Vui lòng nhập tiền đặt cọc!' }]}>{<InputNumber style={{ width: '100%' }} />}</Form.Item>
+                      <Form.Item label="Giá điện" name="electricityCostPerUnit" rules={[{ required: true, message: 'Vui lòng nhập giá điện!' }]}>{<InputNumber style={{ width: '100%' }} />}</Form.Item>
+                      <Form.Item label="Giá nước" name="waterCostPerUnit" rules={[{ required: true, message: 'Vui lòng nhập giá nước!' }]}>{<InputNumber style={{ width: '100%' }} />}</Form.Item>
+                      <Form.Item label="Phí dịch vụ" name="serviceFee" rules={[{ required: true, message: 'Vui lòng nhập phí dịch vụ!' }]}>{<InputNumber style={{ width: '100%' }} />}</Form.Item>
+                      <Form.Item label="Chu kỳ thanh toán" name="paymentCycle" rules={[{ required: true, message: 'Vui lòng chọn chu kỳ!' }]}>{<Select><Select.Option value="MONTHLY">Hàng tháng</Select.Option><Select.Option value="QUARTERLY">Hàng quý</Select.Option><Select.Option value="YEARLY">Hàng năm</Select.Option></Select>}</Form.Item>
+                      <Form.Item label="Số người ở" name="numberOfTenants" rules={[{ required: true, message: 'Vui lòng nhập số người!' }]}>{<InputNumber style={{ width: '100%' }} min={1} />}</Form.Item>
+                    </div>
+                    <Form.Item label="Điều khoản hợp đồng" name="terms">{<Input.TextArea rows={4} />}</Form.Item>
+                    <Form.Item label="Ghi chú" name="notes">{<Input.TextArea rows={2} />}</Form.Item>
+                    <div className="flex justify-end gap-2">
+                      <Button onClick={() => { setIsEditMode(false); editForm.resetFields(); }}>Hủy</Button>
+                      <Button type="primary" htmlType="submit">Lưu</Button>
+                    </div>
+                  </Card>
+                </Form>
+              ) : (
+                <div>
+                  {/* Card 1: Thông tin nhà trọ */}
+                  <Card className="mb-4" title="Thông tin nhà trọ" size="small">
+                    <Descriptions size="small" bordered>
+                      <Descriptions.Item label="Tên nhà trọ">{selectedContract.hostelName}</Descriptions.Item>
+                      <Descriptions.Item label="Địa chỉ" span={2}>{selectedContract.hostelAddress}</Descriptions.Item>
+                      <Descriptions.Item label="Giá thuê">
+                        <span className="font-semibold text-indigo-600">{formatCurrency(selectedContract.hostelPrice)}</span>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Diện tích">{selectedContract.hostelArea}m²</Descriptions.Item>
+                      <Descriptions.Item label="Tiện nghi" span={2}>
+                        {Array.isArray(selectedContract.hostelAmenities)
+                          ? (selectedContract.hostelAmenities.length > 0
+                            ? selectedContract.hostelAmenities.join(', ')
+                            : 'N/A')
+                          : (typeof selectedContract.hostelAmenities === 'string' && selectedContract.hostelAmenities.trim() !== ''
+                            ? selectedContract.hostelAmenities
+                            : 'N/A')}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
 
-              {/* Card 3: Thông tin khách hàng */}
-              <Card className="mb-4" title="Thông tin khách hàng" size="small">
-                <Descriptions column={2} size="small">
-                  <Descriptions.Item label="Họ tên">{detailBooking.customerName}</Descriptions.Item>
-                  <Descriptions.Item label="Số điện thoại">{detailBooking.customerPhone}</Descriptions.Item>
-                  <Descriptions.Item label="Email">{detailBooking.customerEmail || 'N/A'}</Descriptions.Item>
-                  <Descriptions.Item label="Ngày đặt">{formatDate(detailBooking.bookingDate)}</Descriptions.Item>
-                  <Descriptions.Item label="Ngày nhận phòng">{formatDate(detailBooking.checkInDate)}</Descriptions.Item>
-                  <Descriptions.Item label="Tiền đặt cọc">{formatCurrency(detailBooking.depositAmount)}</Descriptions.Item>
-                </Descriptions>
-              </Card>
+                  {/* Card 2: Thông tin chủ nhà */}
+                  <Card className="mb-4" title="Bên A - Thông tin chủ nhà" size="small">
+                    <Descriptions size="small" bordered>
+                      <Descriptions.Item label="Tên chủ nhà">{selectedContract.ownerName}</Descriptions.Item>
+                      <Descriptions.Item label="Số điện thoại">{selectedContract.phoneNumberOwner}</Descriptions.Item>
+                    </Descriptions>
+                  </Card>
 
-              {/* Card 4: Thông tin hợp đồng */}
-              <Card className="mb-4" title="Thông tin hợp đồng" size="small">
-                <Descriptions column={2} size="small" bordered>
-                  <Descriptions.Item label="Mã hợp đồng" span={2}>
-                    <strong>#{selectedContract.contractId}</strong>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Ngày bắt đầu">{formatDate(selectedContract.startDate)}</Descriptions.Item>
-                  <Descriptions.Item label="Ngày kết thúc">{formatDate(selectedContract.endDate)}</Descriptions.Item>
-                  <Descriptions.Item label="Tiền thuê/tháng">
-                    <strong className="text-blue-600">{formatCurrency(selectedContract.monthlyRent)}</strong>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Tiền đặt cọc">
-                    <strong className="text-orange-600">{formatCurrency(selectedContract.depositAmount)}</strong>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Giá điện">
-                    {selectedContract.electricityCostPerUnit ? `${selectedContract.electricityCostPerUnit} VNĐ/kWh` : 'Chưa cập nhật'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Giá nước">
-                    {selectedContract.waterCostPerUnit ? `${selectedContract.waterCostPerUnit} VNĐ/m³` : 'Chưa cập nhật'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Phí dịch vụ">
-                    {selectedContract.serviceFee ? formatCurrency(selectedContract.serviceFee) : 'Không'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Chu kỳ thanh toán">
-                    {selectedContract.paymentCycle === 'MONTHLY' ? 'Hàng tháng' : selectedContract.paymentCycle === 'QUARTERLY' ? 'Hàng quý' : 'Hàng năm'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Số người ở">{selectedContract.numberOfTenants} người</Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái">
-                    <Tag color={getStatusColor(selectedContract.status)}>{getStatusText(selectedContract.status)}</Tag>
-                  </Descriptions.Item>
-                </Descriptions>
-              </Card>
+                  {/* Card 3: Thông tin khách hàng (người thuê) */}
+                  <Card className="mb-4" title="Bên B - Thông tin người thuê" size="small">
+                    <Descriptions size="small" bordered>
+                      <Descriptions.Item label="Họ tên">{selectedContract.tenantName}</Descriptions.Item>
+                      <Descriptions.Item label="Số điện thoại">{selectedContract.phoneNumberTenant}</Descriptions.Item>
+                      <Descriptions.Item label="Email">{selectedContract.tenantEmail || 'N/A'}</Descriptions.Item>
+                    </Descriptions>
+                  </Card>
 
-              {/* Điều khoản hợp đồng */}
-              {selectedContract.terms && (
-                <Card className="mb-4" title="Điều khoản hợp đồng" size="small">
-                  <p className="text-sm whitespace-pre-line">{selectedContract.terms}</p>
-                </Card>
+                  {/* Card 4: Thông tin hợp đồng */}
+                  <Card className="mb-4" title="Thông tin hợp đồng" size="small">
+                    <Descriptions column={2} size="small" bordered>
+                      <Descriptions.Item label="Mã hợp đồng" span={2}>
+                        <strong>#{selectedContract.contractId}</strong>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Ngày bắt đầu">{formatDate(selectedContract.startDate)}</Descriptions.Item>
+                      <Descriptions.Item label="Ngày kết thúc">{formatDate(selectedContract.endDate)}</Descriptions.Item>
+                      <Descriptions.Item label="Tiền thuê/tháng">
+                        <strong className="text-blue-600">{formatCurrency(selectedContract.monthlyRent)}</strong>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Tiền đặt cọc">
+                        <strong className="text-orange-600">{formatCurrency(selectedContract.depositAmount)}</strong>
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Giá điện">
+                        {selectedContract.electricityCostPerUnit ? `${selectedContract.electricityCostPerUnit} VNĐ/kWh` : 'Chưa cập nhật'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Giá nước">
+                        {selectedContract.waterCostPerUnit ? `${selectedContract.waterCostPerUnit} VNĐ/m³` : 'Chưa cập nhật'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Phí dịch vụ">
+                        {selectedContract.serviceFee ? formatCurrency(selectedContract.serviceFee) : 'Không'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Chu kỳ thanh toán">
+                        {selectedContract.paymentCycle === 'MONTHLY' ? 'Hàng tháng' : selectedContract.paymentCycle === 'QUARTERLY' ? 'Hàng quý' : 'Hàng năm'}
+                      </Descriptions.Item>
+                      <Descriptions.Item label="Số người ở">{selectedContract.numberOfTenants} người</Descriptions.Item>
+                      <Descriptions.Item label="Trạng thái">
+                        <Tag color={getStatusColor(selectedContract.status)}>{getStatusText(selectedContract.status)}</Tag>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </Card>
+
+                  {/* Điều khoản hợp đồng */}
+                  {selectedContract.terms && (
+                    <Card className="mb-4" title="Điều khoản hợp đồng" size="small">
+                      <p className="text-sm whitespace-pre-line">{selectedContract.terms}</p>
+                    </Card>
+                  )}
+
+                  {/* Ghi chú */}
+                  {selectedContract.notes && (
+                    <Card title="Ghi chú" size="small">
+                      <p className="text-sm whitespace-pre-line">{selectedContract.notes}</p>
+                    </Card>
+                  )}
+                </div>
               )}
-
-              {/* Ghi chú */}
-              {selectedContract.notes && (
-                <Card title="Ghi chú" size="small">
-                  <p className="text-sm whitespace-pre-line">{selectedContract.notes}</p>
-                </Card>
+              {!isEditMode && (
+                <div className="flex justify-end mb-2 mt-4">
+                      <Button type="primary" onClick={() => {
+                        setIsEditMode(true);
+                      }}>
+                        Chỉnh sửa
+                      </Button>
+                </div>
               )}
             </div>
           ) : (

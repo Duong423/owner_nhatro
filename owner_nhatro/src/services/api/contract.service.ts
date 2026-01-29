@@ -12,7 +12,7 @@ export const contractService = {
     },
 
     /**
-     * Get contract by ID
+     * Get detail contract by ID
      * GET /api/contracts/{id}
      */
     getContractById: async (contractId: number): Promise<Contract> => {
@@ -31,10 +31,10 @@ export const contractService = {
 
     /**
      * Update contract
-     * PUT /api/contracts/{id}
+     * PUT /api/contracts/{id}/update
      */
     updateContract: async (contractId: number, data: UpdateContractDto): Promise<Contract> => {
-        const response: any = await axiosInstance.put(`/contracts/${contractId}`, data);
+        const response: any = await axiosInstance.put(`/contracts/${contractId}/update`, data);
         return response.result || response;
     },
 
