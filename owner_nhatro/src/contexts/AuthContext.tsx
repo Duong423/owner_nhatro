@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authService } from '@/services/api/auth.service';
-import { decodeJWT, isTokenExpired, hasRole } from '@/utils/helpers/jwt.utils';
+import { decodeJWT, isTokenExpired } from '@/utils/helpers/jwt.utils';
 import type { UserInfo } from '@/types/auth.types';
 
 interface AuthContextType {

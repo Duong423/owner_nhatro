@@ -76,5 +76,15 @@ export const contractService = {
             console.log('No contract found for booking:', bookingId);
             return null;
         }
+    },
+
+    /**
+     * Get contract PDF file
+     * GET /api/contracts/{id}/pdf
+     */
+    getContractPdf: async (contractId: number): Promise<Blob> => {
+        // responseType 'blob' ensures we get the raw binary data
+        const response: any = await axiosInstance.get(`/contracts/${contractId}/pdf`, { responseType: 'blob' as const });
+        return response;
     }
 };

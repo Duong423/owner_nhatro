@@ -1,0 +1,203 @@
+import React, { useEffect } from 'react';
+import { MainLayout } from '@/layouts/MainLayout';
+import { Modal, Card, Descriptions, Form, Input, InputNumber, DatePicker, Select, Button } from 'antd';
+import dayjs from 'dayjs';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useContractsStore } from '@/store/useContractsStore';
+import type { CreateContractDto } from '@/types/contract.types';
+import type { Booking } from '@/types/booking.types';
+import type { HostelDetail } from '@/types/room.types';
+import type { Contract } from '@/types/contract.types';
+
+export const CreateContractModal: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const bookingId = searchParams.get('bookingId');
+
+  const [form] = Form.useForm();
+
+  const { hostelDetail, loadBookingData, isCreateMode, setIsCreateMode, createLoading, createContract } = useContractsStore();
+
+  useEffect(() => {
+    if (bookingId) {
+      loadBookingData(Number(bookingId))
+        .then(({ existingContract, booking }: { existingContract: Contract | null; booking?: Booking; hostel?: HostelDetail }) => {
+          if (existingContract) {
+            Modal.warning({
+              title: 'Hợp đồng đã tồn tại',
+              content: 'Booking này đã có hợp đồng. Bạn sẽ được chuyển đến danh sách hợp đồng.',
+              onOk: () => {
+                navigate('/contracts');
+                setIsCreateMode(false);
+              }
+            });
+            return;
+          }
+
+          if (booking && booking.customerId) {
+            const startDate = dayjs();
+            const endDate = startDate.add(12, 'month');
+            form.setFieldsValue({
+              bookingId: booking.bookingId,
+              ownerName: hostelDetail?.ownerName || '',
+              phoneNumberOwner: hostelDetail?.contactPhone || '',
+              tenantName: booking.customerName || '',
+              phoneNumberTenant: booking.customerPhone || '',
+              tenantEmail: booking.customerEmail || '',
+              startDate,
+              endDate,
+              monthlyRent: 3000000,
+              electricityCostPerUnit: 3500,
+              waterCostPerUnit: 15000,
+              serviceFee: 200000,
+              paymentCycle: 'MONTHLY',
+              numberOfTenants: 1,
+              terms: '1. Thanh toán tiền thuê vào ngày 5 hàng tháng\n2. Không được chuyển nhượng phòng',
+            });
+            setIsCreateMode(true);
+          } else {
+            Modal.error({
+              title: 'Không thể tạo hợp đồng',
+              content: 'Khách vãng lai không có tài khoản. Vui lòng yêu cầu khách hàng đăng ký tài khoản trước khi tạo hợp đồng.',
+              onOk: () => navigate('/contracts')
+            });
+          }
+        })
+        .catch((err: any) => {
+          Modal.error({ title: 'Lỗi tải dữ liệu', content: err?.message || String(err), onOk: () => navigate('/contracts') });
+        });
+    }
+  }, [bookingId]);
+
+  const onFinish = async () => {
+    try {
+      const values = await form.validateFields();
+      const dto: CreateContractDto = {
+        bookingId: values.bookingId,
+        ownerName: values.ownerName,
+        phoneNumberOwner: values.phoneNumberOwner,
+        tenantName: values.tenantName,
+        phoneNumberTenant: values.phoneNumberTenant,
+        tenantEmail: values.tenantEmail,
+        startDate: values.startDate.format('YYYY-MM-DD'),
+        endDate: values.endDate.format('YYYY-MM-DD'),
+        monthlyRent: values.monthlyRent,
+        electricityCostPerUnit: values.electricityCostPerUnit,
+        waterCostPerUnit: values.waterCostPerUnit,
+        serviceFee: values.serviceFee,
+        paymentCycle: values.paymentCycle,
+        numberOfTenants: values.numberOfTenants,
+        terms: values.terms,
+        notes: values.notes,
+      };
+
+      await createContract(dto);
+
+      Modal.success({
+        title: 'Tạo hợp đồng thành công!',
+        onOk: () => {
+          setIsCreateMode(false);
+          form.resetFields();
+          navigate('/contracts');
+        }
+      });
+    } catch (err: any) {
+      Modal.error({ title: 'Tạo hợp đồng thất bại', content: err?.response?.data?.message || err?.message || String(err) });
+    }
+  };
+
+  if (!isCreateMode) return null;
+
+  return (
+    <MainLayout>
+      <div className="contracts-page">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">Tạo hợp đồng mới</h1>
+          <Button onClick={() => { setIsCreateMode(false); navigate('/contracts'); }}>Quay lại danh sách</Button>
+        </div>
+
+        {hostelDetail && (
+          <Card className="mb-4" title="Thông tin nhà trọ" size="small">
+            <Descriptions size="small" bordered>
+              <Descriptions.Item label="Tên nhà trọ">{hostelDetail.name}</Descriptions.Item>
+              <Descriptions.Item label="Diện tích">{hostelDetail.area}m²</Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ" span={2}>{hostelDetail.address}</Descriptions.Item>
+              <Descriptions.Item label="Giá thuê">{hostelDetail.price}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        )}
+
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Card title="Bên A - Thông tin chủ nhà" className="mb-4" size="small">
+            <div className="grid grid-cols-2 gap-4">
+              <Form.Item label="Tên chủ nhà" name="ownerName" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="Số điện thoại chủ nhà" name="phoneNumberOwner" rules={[{ required: true }, { pattern: /^[0-9]{10}$/ }]}> 
+                <Input />
+              </Form.Item>
+            </div>
+          </Card>
+
+          <Card title="Bên B - Thông tin khách hàng" className="mb-4" size="small">
+            <div className="grid grid-cols-2 gap-4">
+              <Form.Item label="Họ tên khách hàng" name="tenantName" rules={[{ required: true }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="Số điện thoại khách hàng" name="phoneNumberTenant" rules={[{ required: true }, { pattern: /^[0-9]{10}$/ }]}>
+                <Input />
+              </Form.Item>
+              <Form.Item label="Email khách hàng" name="tenantEmail" rules={[{ type: 'email' }]}>
+                <Input />
+              </Form.Item>
+            </div>
+          </Card>
+
+          <Card title="Thông tin hợp đồng" className="mb-4" size="small">
+            <div className="grid grid-cols-2 gap-4">
+              <Form.Item label="Ngày bắt đầu" name="startDate" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+              </Form.Item>
+              <Form.Item label="Ngày kết thúc" name="endDate" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+              </Form.Item>
+              <Form.Item label="Tiền thuê hàng tháng (VNĐ)" name="monthlyRent" rules={[{ required: true }]}>
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item label="Giá điện (VNĐ/kWh)" name="electricityCostPerUnit" rules={[{ required: true }]}>
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item label="Giá nước (VNĐ/m³)" name="waterCostPerUnit" rules={[{ required: true }]}>
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item label="Phí dịch vụ (VNĐ)" name="serviceFee" rules={[{ required: true }]}>
+                <InputNumber style={{ width: '100%' }} />
+              </Form.Item>
+              <Form.Item label="Chu kỳ thanh toán" name="paymentCycle" rules={[{ required: true }]}>
+                <Select>
+                  <Select.Option value="MONTHLY">Hàng tháng</Select.Option>
+                  <Select.Option value="QUARTERLY">Hàng quý</Select.Option>
+                  <Select.Option value="YEARLY">Hàng năm</Select.Option>
+                </Select>
+              </Form.Item>
+              <Form.Item label="Số lượng người thuê" name="numberOfTenants" rules={[{ required: true }]}>
+                <InputNumber style={{ width: '100%' }} min={1} />
+              </Form.Item>
+            </div>
+            <Form.Item label="Điều khoản hợp đồng" name="terms"><Input.TextArea rows={6} /></Form.Item>
+            <Form.Item label="Ghi chú" name="notes"><Input.TextArea rows={3} /></Form.Item>
+          </Card>
+
+          <Form.Item name="bookingId" hidden><Input /></Form.Item>
+
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => { setIsCreateMode(false); navigate('/contracts'); }}>Hủy</Button>
+            <Button type="primary" htmlType="submit" loading={createLoading}>Tạo hợp đồng</Button>
+          </div>
+        </Form>
+      </div>
+    </MainLayout>
+  );
+};
+
+export default CreateContractModal;

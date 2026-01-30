@@ -1,1 +1,2 @@
-export * from './ContractsPage';
+// Use the new clean ContractsPage implementation
+export * from './ContractsPageNew';

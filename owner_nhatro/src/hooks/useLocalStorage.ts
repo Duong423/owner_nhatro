@@ -1,5 +1,5 @@
 // Custom hook for localStorage
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   // Get initial value from localStorage or use provided initial value
