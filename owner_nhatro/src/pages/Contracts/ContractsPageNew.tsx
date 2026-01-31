@@ -21,6 +21,7 @@ export const ContractsPage: React.FC = () => {
 
   const columns: ColumnsType<Contract> = [
     { title: 'Mã HĐ', dataIndex: 'contractId', key: 'contractId', width: 80 },
+    { title: 'Mã phòng', dataIndex: 'roomCode', key: 'roomCode', width: 120, render: (code) => (<div className="font-semibold">{code || 'N/A'}</div>) },
     { title: 'Người thuê', dataIndex: 'tenantName', key: 'tenantName', render: (name, record) => (<div><div className="font-semibold">{name}</div><div className="text-xs text-gray-500">{record.phoneNumberTenant}</div></div>) },
     { title: 'Phòng trọ', dataIndex: 'hostelName', key: 'hostelName', render: (name, record) => (<div><div className="font-semibold">{name}</div><div className="text-xs text-gray-500">{record.hostelAddress}</div></div>), width: 200 },
     { title: 'Tiền thuê', dataIndex: 'monthlyRent', key: 'monthlyRent', render: (amount) => (<span className="font-semibold text-indigo-600">{formatCurrency(amount)}</span>), width: 130 },
@@ -33,22 +34,28 @@ export const ContractsPage: React.FC = () => {
           {record.status === 'PENDING' && (
             <>
               <Button size="small" type="primary" onClick={() => {
-                Modal.confirm({ title: 'Xác nhận ký hợp đồng', content: 'Bạn có chắc chắn muốn ký hợp đồng này?', okText: 'Xác nhận ký', cancelText: 'Hủy', onOk: async () => {
-                  try { await signContract(record.contractId); Modal.success({ content: 'Ký hợp đồng thành công!' }); } catch (err: any) { Modal.error({ title: 'Ký hợp đồng thất bại', content: err?.response?.data?.message || err.message }); }
-                } });
+                Modal.confirm({
+                  title: 'Xác nhận ký hợp đồng', content: 'Bạn có chắc chắn muốn ký hợp đồng này?', okText: 'Xác nhận ký', cancelText: 'Hủy', onOk: async () => {
+                    try { await signContract(record.contractId); Modal.success({ content: 'Ký hợp đồng thành công!' }); } catch (err: any) { Modal.error({ title: 'Ký hợp đồng thất bại', content: err?.response?.data?.message || err.message }); }
+                  }
+                });
               }}>Ký hợp đồng</Button>
               <Button size="small" danger onClick={() => {
-                Modal.confirm({ title: 'Xác nhận chấm dứt hợp đồng', content: 'Bạn có chắc chắn muốn chấm dứt hợp đồng này?', okText: 'Xác nhận', cancelText: 'Hủy', okButtonProps: { danger: true }, onOk: async () => {
-                  try { await terminateContract(record.contractId); Modal.success({ content: 'Chấm dứt hợp đồng thành công!' }); } catch (err: any) { Modal.error({ title: 'Chấm dứt hợp đồng thất bại', content: err?.response?.data?.message || err.message }); }
-                } });
+                Modal.confirm({
+                  title: 'Xác nhận chấm dứt hợp đồng', content: 'Bạn có chắc chắn muốn chấm dứt hợp đồng này?', okText: 'Xác nhận', cancelText: 'Hủy', okButtonProps: { danger: true }, onOk: async () => {
+                    try { await terminateContract(record.contractId); Modal.success({ content: 'Chấm dứt hợp đồng thành công!' }); } catch (err: any) { Modal.error({ title: 'Chấm dứt hợp đồng thất bại', content: err?.response?.data?.message || err.message }); }
+                  }
+                });
               }}>Hủy</Button>
             </>
           )}
           {record.status === 'ACTIVE' && (
             <Button size="small" danger onClick={() => {
-              Modal.confirm({ title: 'Xác nhận chấm dứt hợp đồng', content: 'Bạn có chắc chắn muốn chấm dứt hợp đồng này?', okText: 'Xác nhận', cancelText: 'Hủy', okButtonProps: { danger: true }, onOk: async () => {
-                try { await terminateContract(record.contractId); Modal.success({ content: 'Chấm dứt hợp đồng thành công!' }); } catch (err: any) { Modal.error({ title: 'Chấm dứt hợp đồng thất bại', content: err?.response?.data?.message || err.message }); }
-              } });
+              Modal.confirm({
+                title: 'Xác nhận chấm dứt hợp đồng', content: 'Bạn có chắc chắn muốn chấm dứt hợp đồng này?', okText: 'Xác nhận', cancelText: 'Hủy', okButtonProps: { danger: true }, onOk: async () => {
+                  try { await terminateContract(record.contractId); Modal.success({ content: 'Chấm dứt hợp đồng thành công!' }); } catch (err: any) { Modal.error({ title: 'Chấm dứt hợp đồng thất bại', content: err?.response?.data?.message || err.message }); }
+                }
+              });
             }}>Chấm dứt</Button>
           )}
         </Space>

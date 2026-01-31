@@ -22,19 +22,15 @@ export const CreateContractModal: React.FC = () => {
     if (bookingId) {
       loadBookingData(Number(bookingId))
         .then(({ existingContract, booking }: { existingContract: Contract | null; booking?: Booking; hostel?: HostelDetail }) => {
-          if (existingContract) {
-            Modal.warning({
-              title: 'Hợp đồng đã tồn tại',
-              content: 'Booking này đã có hợp đồng. Bạn sẽ được chuyển đến danh sách hợp đồng.',
-              onOk: () => {
-                navigate('/contracts');
-                setIsCreateMode(false);
-              }
-            });
+          // Nếu đã tồn tại hợp đồng và hợp đồng đó không phải là TERMINATED/EXPIRED thì thông báo non-blocking và chuyển hướng
+          if (existingContract && existingContract.status !== 'TERMINATED' && existingContract.status !== 'EXPIRED') {
+            // Thay modal blocker bằng toast không chặn và điều hướng bằng replace
+            setIsCreateMode(false);
+            navigate('/contracts', { replace: true });
             return;
           }
 
-          if (booking && booking.customerId) {
+          if (booking && booking.customerId) { // OK để tạo hợp đồng mới nếu hợp đồng cũ đã chấm dứt hoặc hết hạn
             const startDate = dayjs();
             const endDate = startDate.add(12, 'month');
             form.setFieldsValue({
@@ -43,6 +39,7 @@ export const CreateContractModal: React.FC = () => {
               phoneNumberOwner: hostelDetail?.contactPhone || '',
               tenantName: booking.customerName || '',
               phoneNumberTenant: booking.customerPhone || '',
+              cccd: (booking as any).cccd || '',
               tenantEmail: booking.customerEmail || '',
               startDate,
               endDate,
@@ -78,6 +75,7 @@ export const CreateContractModal: React.FC = () => {
         phoneNumberOwner: values.phoneNumberOwner,
         tenantName: values.tenantName,
         phoneNumberTenant: values.phoneNumberTenant,
+        cccd: values.cccd,
         tenantEmail: values.tenantEmail,
         startDate: values.startDate.format('YYYY-MM-DD'),
         endDate: values.endDate.format('YYYY-MM-DD'),
@@ -93,14 +91,11 @@ export const CreateContractModal: React.FC = () => {
 
       await createContract(dto);
 
-      Modal.success({
-        title: 'Tạo hợp đồng thành công!',
-        onOk: () => {
-          setIsCreateMode(false);
-          form.resetFields();
-          navigate('/contracts');
-        }
-      });
+      // Dùng toast non-blocking và điều hướng bằng replace để xóa query params
+      import('antd').then(({ message }) => message.success('Tạo hợp đồng thành công!'));
+      setIsCreateMode(false);
+      form.resetFields();
+      navigate('/contracts', { replace: true });
     } catch (err: any) {
       Modal.error({ title: 'Tạo hợp đồng thất bại', content: err?.response?.data?.message || err?.message || String(err) });
     }
@@ -147,9 +142,13 @@ export const CreateContractModal: React.FC = () => {
               <Form.Item label="Số điện thoại khách hàng" name="phoneNumberTenant" rules={[{ required: true }, { pattern: /^[0-9]{10}$/ }]}>
                 <Input />
               </Form.Item>
+              <Form.Item label="CCCD/CMND" name="cccd" rules={[{ pattern: /^[0-9]{9,12}$/, message: 'CCCD không hợp lệ' }]}>
+                <Input />
+              </Form.Item>
               <Form.Item label="Email khách hàng" name="tenantEmail" rules={[{ type: 'email' }]}>
                 <Input />
               </Form.Item>
+
             </div>
           </Card>
 

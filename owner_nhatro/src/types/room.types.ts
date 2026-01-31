@@ -5,6 +5,7 @@ export interface Hostel {
   ownerId: number;
   ownerName: string;
   name: string;
+  roomCode?: string;
   address: string;
   price: number;
   area: number;

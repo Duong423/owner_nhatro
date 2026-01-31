@@ -13,11 +13,13 @@ export interface Contract {
   tenantId: number;
   tenantName: string;
   phoneNumberTenant: string;
+  cccd?: string;
   tenantEmail?: string;
   
   // Thông tin phòng trọ
   hostelId: number;
   hostelName: string;
+  roomCode?: string;
   hostelAddress: string;
   hostelPrice: number;
   hostelArea: number;
@@ -56,6 +58,7 @@ export interface CreateContractDto  {
   phoneNumberOwner: string;
   tenantName: string;
   phoneNumberTenant: string;
+  cccd?: string;
   tenantEmail?: string;
   startDate: string;
   endDate: string;
@@ -72,6 +75,7 @@ export interface CreateContractDto  {
 export interface UpdateContractDto {
   tenantName?: string;
   phoneNumberTenant?: string;
+  cccd?: string;
   tenantEmail?: string;
   ownerName?: string;
   phoneNumberOwner?: string;

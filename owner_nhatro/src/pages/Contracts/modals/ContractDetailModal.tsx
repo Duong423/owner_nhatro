@@ -43,6 +43,7 @@ export const ContractDetailModal: React.FC = () => {
         phoneNumberOwner: selectedContract.phoneNumberOwner,
         tenantName: selectedContract.tenantName,
         phoneNumberTenant: selectedContract.phoneNumberTenant,
+        cccd: selectedContract.cccd || '',
         tenantEmail: selectedContract.tenantEmail,
         startDate: selectedContract.startDate ? dayjs(selectedContract.startDate) : null,
         endDate: selectedContract.endDate ? dayjs(selectedContract.endDate) : null,
@@ -83,6 +84,7 @@ export const ContractDetailModal: React.FC = () => {
               <Form.Item label="Số điện thoại chủ nhà" name="phoneNumberOwner" rules={[{ required: true }, { pattern: /^[0-9]{10}$/ }]}>{<Input />}</Form.Item>
               <Form.Item label="Họ tên người thuê" name="tenantName" rules={[{ required: true }]}>{<Input />}</Form.Item>
               <Form.Item label="Số điện thoại người thuê" name="phoneNumberTenant" rules={[{ required: true }, { pattern: /^[0-9]{10}$/ }]}>{<Input />}</Form.Item>
+              <Form.Item label="CCCD/CMND" name="cccd" rules={[{ pattern: /^[0-9]{9,12}$/, message: 'CCCD không hợp lệ' }]}>{<Input />}</Form.Item>
               <Form.Item label="Email người thuê" name="tenantEmail" rules={[{ type: 'email' }]}>{<Input />}</Form.Item>
               <Form.Item label="Ngày bắt đầu" name="startDate" rules={[{ required: true }]}>{<DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />}</Form.Item>
               <Form.Item label="Ngày kết thúc" name="endDate" rules={[{ required: true }]}>{<DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />}</Form.Item>
@@ -107,6 +109,7 @@ export const ContractDetailModal: React.FC = () => {
           <Card className="mb-4" title="Thông tin nhà trọ" size="small">
             <Descriptions size="small" bordered>
               <Descriptions.Item label="Tên nhà trọ">{selectedContract.hostelName}</Descriptions.Item>
+              <Descriptions.Item label="Mã phòng">{selectedContract.roomCode || 'N/A'}</Descriptions.Item>
               <Descriptions.Item label="Địa chỉ" span={2}>{selectedContract.hostelAddress}</Descriptions.Item>
               <Descriptions.Item label="Giá thuê">{formatCurrency(selectedContract.hostelPrice)}</Descriptions.Item>
               <Descriptions.Item label="Diện tích">{selectedContract.hostelArea}m²</Descriptions.Item>
@@ -125,6 +128,7 @@ export const ContractDetailModal: React.FC = () => {
             <Descriptions size="small" bordered>
               <Descriptions.Item label="Họ tên">{selectedContract.tenantName}</Descriptions.Item>
               <Descriptions.Item label="Số điện thoại">{selectedContract.phoneNumberTenant}</Descriptions.Item>
+              <Descriptions.Item label="CCCD">{selectedContract.cccd || 'N/A'}</Descriptions.Item>
               <Descriptions.Item label="Email">{selectedContract.tenantEmail || 'N/A'}</Descriptions.Item>
             </Descriptions>
           </Card>

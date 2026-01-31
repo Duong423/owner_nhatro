@@ -19,6 +19,7 @@ export interface Booking {
   
   hostelId: number;
   hostelName: string;
+  roomCode?: string;
   hostelAddress: string;
   
   bookingDate: string; // DateTime

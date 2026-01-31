@@ -176,9 +176,10 @@ export const RoomsPage = () => {
     // Pre-fill form with existing data
     editForm.setFieldsValue({
       title: selectedHostel.name,
+      roomCode: selectedHostel.roomCode || '',
+      area: selectedHostel.area,
       address: selectedHostel.address,
       price: selectedHostel.price,
-      area: selectedHostel.area,
       depositAmount: selectedHostel.depositAmount,
       description: selectedHostel.description,
       amenities: selectedHostel.amenities || '',
@@ -233,6 +234,7 @@ export const RoomsPage = () => {
       // Step 2: Update hostel info
       const updateData = {
         name: values.title,
+        roomCode: values.roomCode,
         address: values.address,
         description: values.description,
         price: values.price,
@@ -312,6 +314,10 @@ export const RoomsPage = () => {
                       <p className="text-sm text-gray-500 mb-2">
                         <span>📍</span> {hostel.address}
                       </p>
+                      {hostel.roomCode && (
+                        <p className="text-sm text-gray-500 mb-2"><span className="font-medium">Mã phòng:</span> <span className="ml-1">{hostel.roomCode}</span></p>
+                      )}
+
                       <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
                         <div>
                           <span className="text-gray-500">Giá:</span>
@@ -406,6 +412,12 @@ export const RoomsPage = () => {
                       <span className="text-gray-500">Diện tích:</span>
                       <div className="font-semibold">{selectedHostel.area}m²</div>
                     </div>
+                    {selectedHostel.roomCode && (
+                      <div>
+                        <span className="text-gray-500">Mã phòng:</span>
+                        <div className="font-semibold">{selectedHostel.roomCode}</div>
+                      </div>
+                    )}
                     {selectedHostel.depositAmount && (
                       <div>
                         <span className="text-gray-500">Tiền cọc:</span>
@@ -599,6 +611,12 @@ export const RoomsPage = () => {
             layout="vertical"
             className="mt-4"
           >
+            <Form.Item
+              label="Mã phòng (nếu có)"
+              name="roomCode"
+            >
+              <Input placeholder="VD: A101" />
+            </Form.Item>
             <Form.Item
               label="Tên phòng trọ"
               name="title"

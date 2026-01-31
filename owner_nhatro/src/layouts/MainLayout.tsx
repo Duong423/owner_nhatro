@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { path: '/tenants', label: 'Đặt trọ' },
   { path: '/contracts', label: 'Hợp đồng' },
   { path: '/payments', label: 'Thanh toán' },
+  { path: '/vehicles', label: 'Phương tiện' },
 ];
 
 export const MainLayout = ({ children }: MainLayoutProps) => {

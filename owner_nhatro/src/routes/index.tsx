@@ -9,6 +9,7 @@ import { RoomsPage } from '@/pages/Rooms';
 import { TenantsPage } from '@/pages/Tenants';
 import { ContractsPage } from '@/pages/Contracts';
 import { PaymentsPage } from '@/pages/Payments';
+import { VehiclesPage } from '@/pages/Vehicles';
 
 export const AppRoutes = () => {
     return (
@@ -64,6 +65,14 @@ export const AppRoutes = () => {
                         element={
                             <ProtectedRoute>
                                 <PaymentsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/vehicles"
+                        element={
+                            <ProtectedRoute>
+                                <VehiclesPage />
                             </ProtectedRoute>
                         }
                     />

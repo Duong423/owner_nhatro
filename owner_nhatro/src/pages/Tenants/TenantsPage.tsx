@@ -437,6 +437,9 @@ export const TenantsPage = () => {
                   <Descriptions.Item label="Tên phòng trọ">
                     {selectedBooking.hostelName}
                   </Descriptions.Item>
+                  <Descriptions.Item label="Mã phòng">
+                    {selectedBooking.roomCode || 'N/A'}
+                  </Descriptions.Item>
                   <Descriptions.Item label="Địa chỉ">
                     {selectedBooking.hostelAddress}
                   </Descriptions.Item>
