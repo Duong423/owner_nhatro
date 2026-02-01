@@ -10,6 +10,7 @@ import { TenantsPage } from '@/pages/Tenants';
 import { ContractsPage } from '@/pages/Contracts';
 import { PaymentsPage } from '@/pages/Payments';
 import { VehiclesPage } from '@/pages/Vehicles';
+import { BillsPage } from '@/pages/Bills/BillsPage';
 
 export const AppRoutes = () => {
     return (
@@ -73,6 +74,14 @@ export const AppRoutes = () => {
                         element={
                             <ProtectedRoute>
                                 <VehiclesPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/bills"
+                        element={
+                            <ProtectedRoute>
+                                <BillsPage />
                             </ProtectedRoute>
                         }
                     />

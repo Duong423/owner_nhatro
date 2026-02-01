@@ -109,7 +109,7 @@ export const ContractDetailModal: React.FC = () => {
           <Card className="mb-4" title="Thông tin nhà trọ" size="small">
             <Descriptions size="small" bordered>
               <Descriptions.Item label="Tên nhà trọ">{selectedContract.hostelName}</Descriptions.Item>
-              <Descriptions.Item label="Mã phòng">{selectedContract.roomCode || 'N/A'}</Descriptions.Item>
+              <Descriptions.Item label="Mã phòng">{selectedContract.hostelRoomCode || selectedContract.roomCode || 'N/A'}</Descriptions.Item>
               <Descriptions.Item label="Địa chỉ" span={2}>{selectedContract.hostelAddress}</Descriptions.Item>
               <Descriptions.Item label="Giá thuê">{formatCurrency(selectedContract.hostelPrice)}</Descriptions.Item>
               <Descriptions.Item label="Diện tích">{selectedContract.hostelArea}m²</Descriptions.Item>

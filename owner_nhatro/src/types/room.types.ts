@@ -6,10 +6,12 @@ export interface Hostel {
   ownerName: string;
   name: string;
   roomCode?: string;
+  hostelRoomCode?: string;
   address: string;
   price: number;
   area: number;
   depositAmount?: number;
+  status?: string; // 'available', 'occupied', 'full', 'maintenance'
   
   contactName: string;
   contactPhone: string;

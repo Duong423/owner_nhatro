@@ -292,12 +292,29 @@ export const RoomsPage = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {hostels.map((hostel) => (
+            {hostels.map((hostel) => {
+              const isFull = hostel.status && (hostel.status.toLowerCase() === 'full' || hostel.status.toLowerCase() === 'occupied');
+              const isReserved = hostel.status && hostel.status.toLowerCase() === 'reserved';
+              
+              return (
               <Card
                 key={hostel.hostelId}
                 hoverable
+                className={`mb-4 ${isFull ? 'opacity-50' : ''} ${isReserved ? 'border-2 border-orange-400' : ''}`}
                 cover={hostel.imageUrls && hostel.imageUrls.length > 0 ? (
-                  <img src={hostel.imageUrls[0]} alt={hostel.name} className="h-48 w-full object-cover" />
+                  <div className="relative">
+                    <img src={hostel.imageUrls[0]} alt={hostel.name} className="h-48 w-full object-cover" />
+                    {isFull && (
+                      <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        Đã cho thuê
+                      </div>
+                    )}
+                    {isReserved && (
+                      <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                        Đang giữ chỗ
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-48 bg-gray-200">
                     <svg className="w-16 h-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -305,7 +322,6 @@ export const RoomsPage = () => {
                     </svg>
                   </div>
                 )}
-                className="mb-4"
               >
                 <Card.Meta
                   title={<span className="text-lg font-semibold text-gray-900">{hostel.name}</span>}
@@ -316,6 +332,20 @@ export const RoomsPage = () => {
                       </p>
                       {hostel.roomCode && (
                         <p className="text-sm text-gray-500 mb-2"><span className="font-medium">Mã phòng:</span> <span className="ml-1">{hostel.roomCode}</span></p>
+                      )}
+                      {hostel.status && (
+                        <p className="text-sm mb-2">
+                          <span className="font-medium">Trạng thái:</span> 
+                          <span className={`ml-1 font-semibold ${
+                            isFull ? 'text-red-600' : 
+                            isReserved ? 'text-orange-600' : 
+                            'text-green-600'
+                          }`}>
+                            {isFull ? '🔴 Đã cho thuê' : 
+                             isReserved ? '🟠 Đang giữ chỗ' : 
+                             '🟢 Còn trống'}
+                          </span>
+                        </p>
                       )}
 
                       <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
@@ -354,7 +384,8 @@ export const RoomsPage = () => {
                   }
                 />
               </Card>
-            ))}
+            );
+            })}
           </div>
         )}
 

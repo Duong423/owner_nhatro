@@ -7,6 +7,7 @@ export interface Vehicle {
   phoneNumberTenant?: string;
   roomCode?: string;
   licensePlates: string; // comma-separated
+  status?: string; // 'ACTIVE', 'INACTIVE', 'DELETED'
   createdAt?: string;
   updatedAt?: string;
 }

@@ -20,6 +20,7 @@ export interface Contract {
   hostelId: number;
   hostelName: string;
   roomCode?: string;
+  hostelRoomCode?: string;
   hostelAddress: string;
   hostelPrice: number;
   hostelArea: number;

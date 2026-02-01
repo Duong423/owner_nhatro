@@ -21,7 +21,7 @@ export const ContractsPage: React.FC = () => {
 
   const columns: ColumnsType<Contract> = [
     { title: 'Mã HĐ', dataIndex: 'contractId', key: 'contractId', width: 80 },
-    { title: 'Mã phòng', dataIndex: 'roomCode', key: 'roomCode', width: 120, render: (code) => (<div className="font-semibold">{code || 'N/A'}</div>) },
+    { title: 'Mã phòng', key: 'roomCode', width: 120, render: (_, record) => (<div className="font-semibold">{record.hostelRoomCode || record.roomCode || 'N/A'}</div>) },
     { title: 'Người thuê', dataIndex: 'tenantName', key: 'tenantName', render: (name, record) => (<div><div className="font-semibold">{name}</div><div className="text-xs text-gray-500">{record.phoneNumberTenant}</div></div>) },
     { title: 'Phòng trọ', dataIndex: 'hostelName', key: 'hostelName', render: (name, record) => (<div><div className="font-semibold">{name}</div><div className="text-xs text-gray-500">{record.hostelAddress}</div></div>), width: 200 },
     { title: 'Tiền thuê', dataIndex: 'monthlyRent', key: 'monthlyRent', render: (amount) => (<span className="font-semibold text-indigo-600">{formatCurrency(amount)}</span>), width: 130 },
