@@ -33,6 +33,9 @@ export const CreateBillModal: React.FC<CreateBillModalProps> = ({
         roomCode: values.roomCode,
         billingMonth: values.billingMonth,
         billingYear: values.billingYear,
+        electricityCost: values.electricityCost,
+        waterCost: values.waterCost,
+        serviceCost: values.serviceCost,
         note: values.note,
       };
 
@@ -59,6 +62,7 @@ export const CreateBillModal: React.FC<CreateBillModalProps> = ({
       open={createModalOpen}
       onCancel={handleCancel}
       footer={null}
+      zIndex={1001}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
         <Form.Item
@@ -90,7 +94,24 @@ export const CreateBillModal: React.FC<CreateBillModalProps> = ({
         >
           <Input type="number" placeholder="2026" />
         </Form.Item>
-
+        <Form.Item
+          label="Tiền điện"
+          name="electricityCost"
+        >
+          <Input type="number" placeholder="Ví dụ: 500000" />
+        </Form.Item>
+        <Form.Item
+          label="Tiền nước"
+          name="waterCost"
+        >
+          <Input type="number" placeholder="Ví dụ: 300000" />
+        </Form.Item>
+        <Form.Item
+          label="Tiền dịch vụ"
+          name="serviceCost"
+        >
+          <Input type="number" placeholder="Ví dụ: 200000" />
+        </Form.Item>
         <Form.Item label="Ghi chú" name="note">
           <TextArea rows={3} placeholder="Nhớ thanh toán đúng hạn" />
         </Form.Item>

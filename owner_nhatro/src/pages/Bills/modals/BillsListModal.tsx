@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Table, Tag, Button, Space, message } from 'antd';
-import { PlusOutlined, DollarOutlined, PrinterOutlined } from '@ant-design/icons';
+import { PlusOutlined, DollarOutlined, PrinterOutlined, EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Bill } from '@/types/bill.types';
 import { useBillsStore } from '@/store/useBillsStore';
@@ -22,6 +22,7 @@ export const BillsListModal: React.FC<BillsListModalProps> = ({
     loading, 
     billsModalOpen, 
     closeBillsModal, 
+    openEditModal,
     openPaymentModal 
   } = useBillsStore();
 
@@ -159,7 +160,7 @@ export const BillsListModal: React.FC<BillsListModalProps> = ({
     {
       title: 'Hành động',
       key: 'action',
-      width: 180,
+      width: 220,
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -170,6 +171,16 @@ export const BillsListModal: React.FC<BillsListModalProps> = ({
           >
             In
           </Button>
+          {record.status !== 'PAID' && (
+            <Button
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => openEditModal(record)}
+              title="Sửa hóa đơn"
+            >
+              Sửa
+            </Button>
+          )}
           {record.status !== 'PAID' && (
             <Button
               size="small"

@@ -6,6 +6,7 @@ import { roomService } from '@/services/api/room.service';
 import { useBillsStore } from '@/store/useBillsStore';
 import { BillsListModal } from './modals/BillsListModal';
 import { CreateBillModal } from './modals/CreateBillModal';
+import { EditBillModal } from './modals/EditBillModal';
 import { PaymentModal } from './modals/PaymentModal';
 
 export const BillsPage: React.FC = () => {
@@ -121,6 +122,7 @@ export const BillsPage: React.FC = () => {
               roomCode={selectedRoom.hostelRoomCode || selectedRoom.roomCode || ''}
               onSuccess={handleRefreshBills}
             />
+            <EditBillModal onSuccess={handleRefreshBills} />
             <PaymentModal onSuccess={handleRefreshBills} />
           </>
         )}

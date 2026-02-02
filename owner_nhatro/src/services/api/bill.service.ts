@@ -1,6 +1,6 @@
 // Bill API service
 import { axiosInstance } from './axios.config';
-import type { Bill, CreateBillDto, PaymentDto } from '@/types/bill.types';
+import type { Bill, CreateBillDto, PaymentDto, UpdateBillDto } from '@/types/bill.types';
 
 export const billService = {
   /**
@@ -27,6 +27,15 @@ export const billService = {
    */
   confirmPayment: async (billId: number, dto: PaymentDto): Promise<Bill> => {
     const response: any = await axiosInstance.post(`/bills/${billId}/confirm-payment`, dto);
+    return response?.result || response;
+  },
+
+  /**
+   * Update bill
+   * PUT /api/bills/{billId}
+   */
+  updateBill: async (billId: number, dto: UpdateBillDto): Promise<Bill> => {
+    const response: any = await axiosInstance.put(`/bills/${billId}`, dto);
     return response?.result || response;
   },
 

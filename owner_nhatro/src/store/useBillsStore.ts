@@ -13,10 +13,12 @@ interface BillsStore {
   billsModalOpen: boolean;
   createModalOpen: boolean;
   paymentModalOpen: boolean;
+  editModalOpen: boolean;
   
   // Actions
   fetchBillsByRoom: (roomCode: string) => Promise<void>;
   createBill: (dto: any) => Promise<void>;
+  updateBill: (billId: number, dto: any) => Promise<void>;
   confirmPayment: (billId: number, dto: any) => Promise<void>;
   
   // Modal actions
@@ -24,6 +26,8 @@ interface BillsStore {
   closeBillsModal: () => void;
   openCreateModal: () => void;
   closeCreateModal: () => void;
+  openEditModal: (bill: Bill) => void;
+  closeEditModal: () => void;
   openPaymentModal: (bill: Bill) => void;
   closePaymentModal: () => void;
   
@@ -38,6 +42,7 @@ export const useBillsStore = create<BillsStore>((set, get) => ({
   selectedBill: null,
   billsModalOpen: false,
   createModalOpen: false,
+  editModalOpen: false,
   paymentModalOpen: false,
   
   // Fetch bills by room
@@ -69,6 +74,18 @@ export const useBillsStore = create<BillsStore>((set, get) => ({
     }
   },
   
+  // Update bill
+  updateBill: async (billId: number, dto: any) => {
+    try {
+      await billService.updateBill(billId, dto);
+      message.success('Cập nhật hóa đơn thành công!');
+      get().closeEditModal();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || 'Cập nhật hóa đơn thất bại');
+      throw err;
+    }
+  },
+  
   // Confirm payment
   confirmPayment: async (billId: number, dto: any) => {
     try {
@@ -88,6 +105,9 @@ export const useBillsStore = create<BillsStore>((set, get) => ({
   openCreateModal: () => set({ createModalOpen: true }),
   closeCreateModal: () => set({ createModalOpen: false }),
   
+  openEditModal: (bill: Bill) => set({ selectedBill: bill, editModalOpen: true }),
+  closeEditModal: () => set({ editModalOpen: false, selectedBill: null }),
+  
   openPaymentModal: (bill: Bill) => set({ selectedBill: bill, paymentModalOpen: true }),
   closePaymentModal: () => set({ paymentModalOpen: false, selectedBill: null }),
   
@@ -98,6 +118,7 @@ export const useBillsStore = create<BillsStore>((set, get) => ({
     selectedBill: null,
     billsModalOpen: false,
     createModalOpen: false,
+    editModalOpen: false,
     paymentModalOpen: false,
   }),
 }));

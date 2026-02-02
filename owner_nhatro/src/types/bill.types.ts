@@ -36,10 +36,20 @@ export interface CreateBillDto {
   roomCode: string;
   billingMonth: string | number;
   billingYear: string | number;
+  electricityCost?: number;
+  waterCost?: number;
+  serviceCost?: number;
   note?: string;
 }
 
 export interface PaymentDto {
   paymentMethod: string;
+  note?: string;
+}
+
+export interface UpdateBillDto {
+  electricityCost?: number;
+  waterCost?: number;
+  serviceCost?: number;
   note?: string;
 }
