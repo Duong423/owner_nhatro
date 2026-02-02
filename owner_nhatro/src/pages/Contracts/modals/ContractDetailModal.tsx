@@ -152,13 +152,11 @@ export const ContractDetailModal: React.FC = () => {
           {selectedContract.terms && (<Card className="mb-4" title="Điều khoản hợp đồng" size="small"><p className="text-sm whitespace-pre-line">{selectedContract.terms}</p></Card>)}
           {selectedContract.notes && (<Card title="Ghi chú" size="small"><p className="text-sm whitespace-pre-line">{selectedContract.notes}</p></Card>)}
 
-          {/* Actions: In PDF (always) + Chỉnh sửa (hidden when status === 'ACTIVE') */}
+          {/* Actions: In PDF và Chỉnh sửa (luôn hiển thị) */}
           {!isEditMode && (
             <div className="flex justify-end mb-2 mt-4">
               <Button onClick={handlePrintPdf} loading={pdfLoading} className="mr-2">In PDF</Button>
-              {selectedContract.status !== 'ACTIVE' && (
-                <Button type="primary" onClick={() => setIsEditMode(true)}>Chỉnh sửa</Button>
-              )}
+              <Button type="primary" onClick={() => setIsEditMode(true)}>Chỉnh sửa</Button>
             </div>
           )}
         </div>

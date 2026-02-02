@@ -29,4 +29,25 @@ export const billService = {
     const response: any = await axiosInstance.post(`/bills/${billId}/confirm-payment`, dto);
     return response?.result || response;
   },
+
+  /**
+   * Print bill
+   * GET /api/bills/{billId}/print
+   */
+  printBill: async (billId: number): Promise<Blob> => {
+    // Use axios directly to bypass the response interceptor for blob responses
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(`${axiosInstance.defaults.baseURL}/bills/${billId}/print`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : '',
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to print bill');
+    }
+    
+    return await response.blob();
+  },
 };

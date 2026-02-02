@@ -1,9 +1,10 @@
 import React from 'react';
-import { Modal, Table, Tag, Button, Space } from 'antd';
-import { PlusOutlined, DollarOutlined } from '@ant-design/icons';
+import { Modal, Table, Tag, Button, Space, message } from 'antd';
+import { PlusOutlined, DollarOutlined, PrinterOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Bill } from '@/types/bill.types';
 import { useBillsStore } from '@/store/useBillsStore';
+import { billService } from '@/services/api/bill.service';
 
 interface BillsListModalProps {
   roomCode: string;
@@ -58,6 +59,32 @@ export const BillsListModal: React.FC<BillsListModalProps> = ({
         return 'Chờ xử lý';
       default:
         return status;
+    }
+  };
+
+  const handlePrintBill = async (billId: number) => {
+    try {
+      message.loading({ content: 'Đang tải hóa đơn...', key: 'printBill' });
+      const blob = await billService.printBill(billId);
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Open in new window for printing
+      const printWindow = window.open(url, '_blank');
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+      }
+      
+      message.success({ content: 'Đã tải hóa đơn thành công!', key: 'printBill' });
+    } catch (error: any) {
+      console.error('Error printing bill:', error);
+      message.error({ 
+        content: error?.response?.data?.message || 'Không thể in hóa đơn', 
+        key: 'printBill' 
+      });
     }
   };
 
@@ -132,9 +159,17 @@ export const BillsListModal: React.FC<BillsListModalProps> = ({
     {
       title: 'Hành động',
       key: 'action',
-      width: 120,
+      width: 180,
       render: (_, record) => (
         <Space size="small">
+          <Button
+            size="small"
+            icon={<PrinterOutlined />}
+            onClick={() => handlePrintBill(record.billId)}
+            title="In hóa đơn"
+          >
+            In
+          </Button>
           {record.status !== 'PAID' && (
             <Button
               size="small"
