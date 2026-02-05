@@ -16,7 +16,10 @@ type ContractsState = {
   selectedBooking: Booking | null;
   hostelDetail: HostelDetail | null;
   createLoading: boolean;
+  searchPhone: string;
   fetchContracts: () => Promise<void>;
+  searchContracts: (phone: string) => Promise<void>;
+  setSearchPhone: (phone: string) => void;
   setSelectedContract: (c: Contract | null) => void;
   setDetailModalOpen: (open: boolean) => void;
   setIsCreateMode: (v: boolean) => void;
@@ -37,6 +40,7 @@ export const useContractsStore = create<ContractsState>((set: any, get: any) => 
   selectedBooking: null,
   hostelDetail: null,
   createLoading: false,
+  searchPhone: '',
 
   fetchContracts: async () => {
     try {
@@ -50,6 +54,25 @@ export const useContractsStore = create<ContractsState>((set: any, get: any) => 
     }
   },
 
+  searchContracts: async (phone: string) => {
+    try {
+      set({ loading: true, error: undefined });
+      if (phone.trim()) {
+        const data = await contractService.searchContracts(phone.trim());
+        set({ contracts: data });
+      } else {
+        // If phone is empty, fetch all contracts
+        const data = await contractService.getOwnerContracts();
+        set({ contracts: data });
+      }
+    } catch (err: any) {
+      set({ error: err?.response?.data?.message || 'Không thể tìm kiếm hợp đồng' });
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  setSearchPhone: (phone: string) => set({ searchPhone: phone }),
   setSelectedContract: (c: Contract | null) => set({ selectedContract: c }),
   setDetailModalOpen: (open: boolean) => set({ detailModalOpen: open }),
   setIsCreateMode: (v: boolean) => set({ isCreateMode: v }),

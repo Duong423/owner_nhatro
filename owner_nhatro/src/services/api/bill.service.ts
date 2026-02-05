@@ -4,6 +4,15 @@ import type { Bill, CreateBillDto, PaymentDto, UpdateBillDto } from '@/types/bil
 
 export const billService = {
   /**
+   * Get all bills for owner
+   * GET /api/bills/owner
+   */
+  getOwnerBills: async (): Promise<Bill[]> => {
+    const response: any = await axiosInstance.get('/bills/owner');
+    return response?.result || [];
+  },
+
+  /**
    * Get bills by room code
    * GET /api/bills/room/{roomCode}
    */

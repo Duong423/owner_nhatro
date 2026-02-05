@@ -6,6 +6,7 @@ import { message } from 'antd';
 interface BillsStore {
   // State
   bills: Bill[];
+  ownerBills: Bill[];
   loading: boolean;
   selectedBill: Bill | null;
   
@@ -16,6 +17,7 @@ interface BillsStore {
   editModalOpen: boolean;
   
   // Actions
+  fetchOwnerBills: () => Promise<void>;
   fetchBillsByRoom: (roomCode: string) => Promise<void>;
   createBill: (dto: any) => Promise<void>;
   updateBill: (billId: number, dto: any) => Promise<void>;
@@ -38,12 +40,28 @@ interface BillsStore {
 export const useBillsStore = create<BillsStore>((set, get) => ({
   // Initial state
   bills: [],
+  ownerBills: [],
   loading: false,
   selectedBill: null,
   billsModalOpen: false,
   createModalOpen: false,
   editModalOpen: false,
   paymentModalOpen: false,
+  
+  // Fetch all bills for owner
+  fetchOwnerBills: async () => {
+    set({ loading: true });
+    try {
+      const data = await billService.getOwnerBills();
+      // Lọc chỉ lấy hóa đơn đã thanh toán thành công
+      const paidBills = Array.isArray(data) ? data.filter((bill) => bill.status === 'PAID') : [];
+      set({ ownerBills: paidBills, loading: false });
+    } catch (err: any) {
+      console.error('Error fetching owner bills:', err);
+      message.error(err?.response?.data?.message || 'Không thể tải danh sách hóa đơn');
+      set({ ownerBills: [], loading: false });
+    }
+  },
   
   // Fetch bills by room
   fetchBillsByRoom: async (roomCode: string) => {
@@ -114,6 +132,7 @@ export const useBillsStore = create<BillsStore>((set, get) => ({
   // Reset all state
   reset: () => set({
     bills: [],
+    ownerBills: [],
     loading: false,
     selectedBill: null,
     billsModalOpen: false,

@@ -12,6 +12,17 @@ export const contractService = {
     },
 
     /**
+     * Search contracts by phone number
+     * GET /api/contracts/owner/search?phone={phone}
+     */
+    searchContracts: async (phone: string): Promise<Contract[]> => {
+        const response: any = await axiosInstance.get('/contracts/owner/search', {
+            params: { phone }
+        });
+        return response.result || [];
+    },
+
+    /**
      * Get detail contract by ID
      * GET /api/contracts/{id}
      */

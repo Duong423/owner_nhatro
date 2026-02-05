@@ -1,7 +1,7 @@
 import React from 'react';
 import { MainLayout } from '@/layouts/MainLayout';
-import { Button, Alert, Table, Tag, Card, Space, Modal } from 'antd';
-import { EyeOutlined } from '@ant-design/icons';
+import { Button, Alert, Table, Tag, Card, Space, Modal, Input } from 'antd';
+import { EyeOutlined, SearchOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Contract } from '@/types/contract.types';
 import { useContractsStore } from '@/store/useContractsStore';
@@ -10,9 +10,21 @@ import ContractDetailModal from './modals/ContractDetailModal';
 import { formatCurrency, formatDate, getStatusColor, getStatusText } from '@/pages/Contracts/helpers';
 
 export const ContractsPage: React.FC = () => {
-  const { contracts, loading, error, fetchContracts, setSelectedContract, setDetailModalOpen, signContract, terminateContract, isCreateMode } = useContractsStore();
+  const { contracts, loading, error, fetchContracts, searchContracts, searchPhone, setSearchPhone, setSelectedContract, setDetailModalOpen, signContract, terminateContract, isCreateMode } = useContractsStore();
+  const [localSearchValue, setLocalSearchValue] = React.useState('');
 
   React.useEffect(() => { fetchContracts(); }, [fetchContracts]);
+
+  const handleSearch = () => {
+    setSearchPhone(localSearchValue);
+    searchContracts(localSearchValue);
+  };
+
+  const handleReset = () => {
+    setLocalSearchValue('');
+    setSearchPhone('');
+    fetchContracts();
+  };
 
   // If we are in create mode, show only the create contract page/modal and hide the list/details
   if (isCreateMode) {
@@ -73,6 +85,22 @@ export const ContractsPage: React.FC = () => {
         {error && <Alert message={error} type="error" showIcon className="mb-4" />}
 
         <Card>
+          <div className="mb-4 flex gap-2">
+            <Input
+              placeholder="Tìm kiếm theo số điện thoại khách thuê"
+              value={localSearchValue}
+              onChange={(e) => setLocalSearchValue(e.target.value)}
+              onPressEnter={handleSearch}
+              prefix={<SearchOutlined />}
+              style={{ width: 300 }}
+            />
+            <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+              Tìm kiếm
+            </Button>
+            <Button onClick={handleReset}>
+              Đặt lại
+            </Button>
+          </div>
           <Table columns={columns} dataSource={contracts} rowKey="contractId" loading={loading} pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Tổng ${total} hợp đồng` }} />
         </Card>
 
