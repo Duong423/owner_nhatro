@@ -1,6 +1,7 @@
 // Bill API service
 import { axiosInstance } from './axios.config';
 import type { Bill, CreateBillDto, PaymentDto, UpdateBillDto } from '@/types/bill.types';
+import type { PaymentHistory } from '@/types/payment.types';
 
 export const billService = {
   /**
@@ -10,6 +11,28 @@ export const billService = {
   getOwnerBills: async (): Promise<Bill[]> => {
     const response: any = await axiosInstance.get('/bills/owner');
     return response?.result || [];
+  },
+
+  /**
+   * Get payment history for owner
+   * GET /api/bills/payment-history/owner
+   */
+  getPaymentHistory: async (): Promise<PaymentHistory[]> => {
+    const response: any = await axiosInstance.get('/bills/payment-history/owner');
+    const result = response?.result;
+    return Array.isArray(result) ? result : [];
+  },
+
+  /**
+   * Get payment history by month/year
+   * GET /api/bills/payment-history/monthly?month={month}&year={year}
+   */
+  getPaymentHistoryByMonth: async (month: number, year: number): Promise<PaymentHistory[]> => {
+    const response: any = await axiosInstance.get('/bills/payment-history/monthly', {
+      params: { month, year },
+    });
+    const result = response?.result;
+    return Array.isArray(result) ? result : [];
   },
 
   /**

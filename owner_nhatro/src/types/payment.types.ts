@@ -16,6 +16,37 @@ export interface Payment {
   updatedAt: Date;
 }
 
+export interface PaymentHistory {
+  paymentHistoryId: number;
+  billId: number;
+  contractId: number;
+  roomCode: string;
+  billingMonth: number;
+  billingYear: number;
+
+  roomPrice: number;
+  electricityCost: number;
+  waterCost: number;
+  serviceCost: number;
+  totalAmount: number;
+
+  paymentMethod: string | null;
+  transactionCode: string | null;
+  paymentDate: string | null;
+  dueDate: string | null;
+
+  tenantId: number;
+  tenantName: string;
+  tenantPhone: string;
+
+  ownerId: number;
+  ownerName: string;
+  ownerPhone: string;
+
+  note: string | null;
+  createdAt: string;
+}
+
 export interface CreatePaymentDto {
   contractId: string;
   month: string;

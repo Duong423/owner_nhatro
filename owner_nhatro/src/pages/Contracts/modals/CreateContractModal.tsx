@@ -16,7 +16,11 @@ export const CreateContractModal: React.FC = () => {
 
   const [form] = Form.useForm();
 
-  const { hostelDetail, loadBookingData, isCreateMode, setIsCreateMode, createLoading, createContract } = useContractsStore();
+  const { hostelDetail, hostelList, selectedHostelId, loadBookingData, isCreateMode, setIsCreateMode, createLoading, createContract, fetchHostelList, setSelectedHostelId } = useContractsStore();
+
+  useEffect(() => {
+    fetchHostelList();
+  }, []);
 
   useEffect(() => {
     if (bookingId) {
@@ -110,6 +114,21 @@ export const CreateContractModal: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Tạo hợp đồng mới</h1>
           <Button onClick={() => { setIsCreateMode(false); navigate('/contracts'); }}>Quay lại danh sách</Button>
         </div>
+
+        {/* {hostelList && hostelList.length > 0 && (
+          <Card className="mb-4" title="Chọn nhà trọ" size="small">
+            <Select
+              style={{ width: '100%' }}
+              placeholder="Chọn nhà trọ"
+              value={selectedHostelId}
+              onChange={(value) => setSelectedHostelId(value)}
+              options={hostelList.map((h: any) => ({
+                value: h.hostelId,
+                label: `${h.hostelRoomCode || h.roomCode || h.hostelId} - ${h.name} - ${(h.status || 'unknown').toUpperCase()}`,
+              }))}
+            />
+          </Card>
+        )} */}
 
         {hostelDetail && (
           <Card className="mb-4" title="Thông tin nhà trọ" size="small">

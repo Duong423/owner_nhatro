@@ -55,6 +55,7 @@ export interface Contract {
 export interface CreateContractDto  {
   
   bookingId: number;
+  hostelId?: number;
   ownerName: string;
   phoneNumberOwner: string;
   tenantName: string;

@@ -1,7 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/layouts/MainLayout';
 import { Button, Alert, Table, Tag, Card, Space, Modal, Input } from 'antd';
-import { EyeOutlined, SearchOutlined } from '@ant-design/icons';
+import { EyeOutlined, SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Contract } from '@/types/contract.types';
 import { useContractsStore } from '@/store/useContractsStore';
@@ -10,6 +11,7 @@ import ContractDetailModal from './modals/ContractDetailModal';
 import { formatCurrency, formatDate, getStatusColor, getStatusText } from '@/pages/Contracts/helpers';
 
 export const ContractsPage: React.FC = () => {
+  const navigate = useNavigate();
   const { contracts, loading, error, fetchContracts, searchContracts, searchPhone, setSearchPhone, setSelectedContract, setDetailModalOpen, signContract, terminateContract, isCreateMode } = useContractsStore();
   const [localSearchValue, setLocalSearchValue] = React.useState('');
 
@@ -80,6 +82,9 @@ export const ContractsPage: React.FC = () => {
       <div className="contracts-page">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold text-gray-900">Quản lý hợp đồng</h1>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/contracts/new')}>
+            Tạo mới hợp đồng
+          </Button>
         </div>
 
         {error && <Alert message={error} type="error" showIcon className="mb-4" />}

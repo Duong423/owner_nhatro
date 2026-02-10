@@ -1,6 +1,9 @@
 
 // Hostel types
 export interface Hostel {
+  totalRooms: number;
+  availableRooms: number;
+  occupiedRooms: number;
   hostelId: number;
   ownerId: number;
   ownerName: string;
@@ -12,7 +15,7 @@ export interface Hostel {
   area: number;
   depositAmount?: number;
   status?: string; // 'available', 'occupied', 'full', 'maintenance'
-  
+
   contactName: string;
   contactPhone: string;
   contactEmail: string;

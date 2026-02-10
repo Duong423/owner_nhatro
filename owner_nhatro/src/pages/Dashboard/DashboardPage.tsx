@@ -12,9 +12,10 @@ import {
 } from '@ant-design/icons';
 import { roomService } from '@/services/api/room.service';
 import { contractService } from '@/services/api/contract.service';
-import { useBillsStore } from '@/store/useBillsStore';
+import { billService } from '@/services/api/bill.service';
 import { formatCurrency } from '@/utils/helpers/formatters';
-import type { Hostel, Contract, Bill } from '@/types';
+import type { Hostel, Contract } from '@/types';
+import type { PaymentHistory } from '@/types/payment.types';
 
 interface DashboardStats {
   totalRooms: number;
@@ -30,7 +31,6 @@ interface DashboardStats {
 }
 
 export const DashboardPage = () => {
-  const { ownerBills, fetchOwnerBills } = useBillsStore();
   const [stats, setStats] = useState<DashboardStats>({
     totalRooms: 0,
     occupiedRooms: 0,
@@ -45,7 +45,7 @@ export const DashboardPage = () => {
   });
   const [rooms, setRooms] = useState<Hostel[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
-  const [recentBills, setRecentBills] = useState<Bill[]>([]);
+  const [recentPayments, setRecentPayments] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,40 +55,35 @@ export const DashboardPage = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      // Fetch all data
-      const [roomsData, contractsData] = await Promise.all([
-        roomService.getMyHostels(),
-        contractService.getOwnerContracts(),
-      ]);
-      
-      await fetchOwnerBills();
+      // Fetch all data in parallel
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
 
-      setRooms(roomsData);
+      const [roomsDataWithStats, contractsData, allPayments, monthPayments] = await Promise.all([
+        roomService.getMyHostelsWithStats(),
+        contractService.getOwnerContracts(),
+        billService.getPaymentHistory(),
+        billService.getPaymentHistoryByMonth(currentMonth, currentYear),
+      ]);
+
+      setRooms(roomsDataWithStats.hostels);
       setContracts(contractsData);
       
-      // Calculate stats
-      const totalRooms = roomsData.length;
-      const occupiedRooms = roomsData.filter(r => r.status === 'occupied').length;
-      const availableRooms = roomsData.filter(r => r.status === 'available').length;
+      // Use stats from API
+      const totalRooms = roomsDataWithStats.totalRooms;
+      const occupiedRooms = roomsDataWithStats.occupiedRooms;
+      const availableRooms = roomsDataWithStats.availableRooms;
       
       const totalContracts = contractsData.length;
       const activeContracts = contractsData.filter(c => c.status === 'ACTIVE').length;
       
-      // Get current month
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
+      // Calculate revenue from payment history
+      const totalRevenue = allPayments.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
+      const monthRevenue = monthPayments.reduce((sum, p) => sum + (p.totalAmount || 0), 0);
       
-      // Calculate revenue (from paid bills only, not filtered yet)
-      const totalRevenue = ownerBills.reduce((sum: any, bill: any ) => sum + bill.totalAmount, 0);
-      const monthRevenue = ownerBills
-        .filter((bill: any) => bill.billingMonth === currentMonth && bill.billingYear === currentYear)
-        .reduce((sum: any, bill: any) => sum + bill.totalAmount, 0);
-      
-      // Bill stats (paid bills)
-      const totalBills = ownerBills.length;
-      const paidBills = ownerBills.filter((b: any) => b.status === 'PAID').length;
-      const unpaidBills = ownerBills.filter((b: any) => b.status === 'UNPAID').length;
+      // Payment stats
+      const totalBills = allPayments.length;
       
       setStats({
         totalRooms,
@@ -99,12 +94,12 @@ export const DashboardPage = () => {
         totalRevenue,
         monthRevenue,
         totalBills,
-        paidBills,
-        unpaidBills,
+        paidBills: totalBills,
+        unpaidBills: 0,
       });
       
-      // Get recent 5 bills
-      setRecentBills(ownerBills.slice(0, 5));
+      // Get recent 5 payments
+      setRecentPayments(allPayments.slice(0, 5));
       
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -174,9 +169,9 @@ export const DashboardPage = () => {
 
   const recentBillsColumns = [
     {
-      title: 'Mã HĐ',
-      dataIndex: 'billId',
-      key: 'billId',
+      title: 'Mã TT',
+      dataIndex: 'paymentHistoryId',
+      key: 'paymentHistoryId',
       width: 80,
     },
     {
@@ -194,7 +189,7 @@ export const DashboardPage = () => {
       title: 'Kỳ',
       key: 'period',
       width: 100,
-      render: (_: any, record: Bill) => `${record.billingMonth}/${record.billingYear}`,
+      render: (_: any, record: PaymentHistory) => `${record.billingMonth}/${record.billingYear}`,
     },
     {
       title: 'Tổng tiền',
@@ -303,11 +298,11 @@ export const DashboardPage = () => {
           </Col>
 
           <Col xs={24} lg={12}>
-            <Card title="Hóa đơn đã thanh toán gần đây" className="h-full">
+            <Card title="Thanh toán gần đây" className="h-full">
               <Table
                 columns={recentBillsColumns}
-                dataSource={recentBills}
-                rowKey="billId"
+                dataSource={recentPayments}
+                rowKey="paymentHistoryId"
                 pagination={false}
                 size="small"
               />

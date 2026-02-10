@@ -1,7 +1,7 @@
 import create from 'zustand';
 import type { Contract, CreateContractDto } from '@/types/contract.types';
 import type { Booking } from '@/types/booking.types';
-import type { HostelDetail } from '@/types/room.types';
+import type { Hostel, HostelDetail } from '@/types/room.types';
 import { contractService } from '@/services/api/contract.service';
 import { bookingService } from '@/services/api/booking.service';
 import { roomService } from '@/services/api/room.service';
@@ -15,9 +15,13 @@ type ContractsState = {
   isCreateMode: boolean;
   selectedBooking: Booking | null;
   hostelDetail: HostelDetail | null;
+  hostelList: Hostel[];
+  selectedHostelId: number | null;
   createLoading: boolean;
   searchPhone: string;
   fetchContracts: () => Promise<void>;
+  fetchHostelList: () => Promise<void>;
+  setSelectedHostelId: (id: number | null) => void;
   searchContracts: (phone: string) => Promise<void>;
   setSearchPhone: (phone: string) => void;
   setSelectedContract: (c: Contract | null) => void;
@@ -39,6 +43,8 @@ export const useContractsStore = create<ContractsState>((set: any, get: any) => 
   isCreateMode: false,
   selectedBooking: null,
   hostelDetail: null,
+  hostelList: [],
+  selectedHostelId: null,
   createLoading: false,
   searchPhone: '',
 
@@ -71,6 +77,18 @@ export const useContractsStore = create<ContractsState>((set: any, get: any) => 
       set({ loading: false });
     }
   },
+
+  fetchHostelList: async () => {
+    try {
+      const data = await roomService.getMyHostels();
+      set({ hostelList: Array.isArray(data) ? data : [] });
+    } catch (err: any) {
+      console.error('Error fetching hostel list:', err);
+      set({ hostelList: [] });
+    }
+  },
+
+  setSelectedHostelId: (id: number | null) => set({ selectedHostelId: id }),
 
   setSearchPhone: (phone: string) => set({ searchPhone: phone }),
   setSelectedContract: (c: Contract | null) => set({ selectedContract: c }),

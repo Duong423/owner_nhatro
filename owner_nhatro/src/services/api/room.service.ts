@@ -2,12 +2,31 @@
 import { axiosInstance } from './axios.config';
 import type {Hostel, HostelDetail } from '@/types';
 
+interface HostelsStats {
+  totalRooms: number;
+  availableRooms: number;
+  occupiedRooms: number;
+  hostels: Hostel[];
+}
+
 export const roomService = {
 
   // Get owner's hostels
   getMyHostels: async (): Promise<Hostel[]> => {
     const response: any = await axiosInstance.get('/hostels/owner/my-hostels');
-    return response?.result || [];
+    const hostels = response?.result?.hostels;
+    return Array.isArray(hostels) ? hostels : [];
+  },
+
+  // Get owner's hostels with statistics
+  getMyHostelsWithStats: async (): Promise<HostelsStats> => {
+    const response: any = await axiosInstance.get('/hostels/owner/my-hostels');
+    return {
+      totalRooms: response?.result?.totalRooms || 0,
+      availableRooms: response?.result?.availableRooms || 0,
+      occupiedRooms: response?.result?.occupiedRooms || 0,
+      hostels: Array.isArray(response?.result?.hostels) ? response.result.hostels : [],
+    };
   },
 
   // Get hostel detail

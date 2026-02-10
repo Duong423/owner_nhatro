@@ -1,46 +1,89 @@
 // Payments page
 import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/layouts/MainLayout';
-import { useBillsStore } from '@/store/useBillsStore';
-import { Table, Tag, Space, Button, Card, Descriptions, Modal, Spin } from 'antd';
-import type { Bill } from '@/types/bill.types';
+import { billService } from '@/services/api/bill.service';
+import { Table, Tag, Space, Button, Card, Descriptions, Modal, Select, Row, Col } from 'antd';
+import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import type { PaymentHistory } from '@/types/payment.types';
 import { formatCurrency } from '@/utils/helpers/formatters';
 
+const currentDate = new Date();
+const monthOptions = Array.from({ length: 12 }, (_, i) => ({
+  value: i + 1,
+  label: `Tháng ${i + 1}`,
+}));
+
+const yearOptions = Array.from({ length: 5 }, (_, i) => {
+  const y = currentDate.getFullYear() - 2 + i;
+  return { value: y, label: `${y}` };
+});
+
 export const PaymentsPage = () => {
-  const { ownerBills, loading, fetchOwnerBills } = useBillsStore();
-  const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
+  const [payments, setPayments] = useState<PaymentHistory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentHistory | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [filterMonth, setFilterMonth] = useState<number>(currentDate.getMonth() + 1);
+  const [filterYear, setFilterYear] = useState<number>(currentDate.getFullYear());
 
   useEffect(() => {
-    fetchOwnerBills();
+    fetchByMonth(filterMonth, filterYear);
   }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PAID': return 'success';
-      case 'UNPAID': return 'default';
-      case 'PENDING': return 'processing';
-      case 'OVERDUE': return 'error';
-      default: return 'default';
+  const fetchAllPayments = async () => {
+    setLoading(true);
+    try {
+      const data = await billService.getPaymentHistory();
+      setPayments(data);
+    } catch (err) {
+      console.error('Error fetching payment history:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'PAID': return 'Đã thanh toán';
-      case 'UNPAID': return 'Chưa thanh toán';
-      case 'PENDING': return 'Đang xử lý';
-      case 'OVERDUE': return 'Quá hạn';
-      default: return status;
+  const fetchByMonth = async (month: number, year: number) => {
+    setLoading(true);
+    try {
+      const data = await billService.getPaymentHistoryByMonth(month, year);
+      setPayments(data);
+    } catch (err) {
+      console.error('Error fetching monthly payment history:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleViewDetail = (bill: Bill) => {
-    setSelectedBill(bill);
+  const handleFilter = () => {
+    fetchByMonth(filterMonth, filterYear);
+  };
+
+  const handleShowAll = () => {
+    fetchAllPayments();
+  };
+
+  const handleViewDetail = (payment: PaymentHistory) => {
+    setSelectedPayment(payment);
     setDetailModalOpen(true);
   };
 
+  const getPaymentMethodText = (method: string | null) => {
+    switch (method) {
+      case 'CASH': return 'Tiền mặt';
+      case 'ZALO_PAY': return 'ZaloPay';
+      case 'MOMO': return 'MoMo';
+      case 'BANK_TRANSFER': return 'Chuyển khoản';
+      default: return method || '-';
+    }
+  };
+
   const columns = [
+    {
+      title: 'Mã TT',
+      dataIndex: 'paymentHistoryId',
+      key: 'paymentHistoryId',
+      width: 80,
+    },
     {
       title: 'Mã hóa đơn',
       dataIndex: 'billId',
@@ -57,7 +100,7 @@ export const PaymentsPage = () => {
       title: 'Khách hàng',
       key: 'tenant',
       width: 200,
-      render: (_: any, record: Bill) => (
+      render: (_: any, record: PaymentHistory) => (
         <div>
           <div className="font-semibold">{record.tenantName}</div>
           <div className="text-gray-500 text-sm">{record.tenantPhone}</div>
@@ -65,10 +108,10 @@ export const PaymentsPage = () => {
       ),
     },
     {
-      title: 'Kỳ hóa đơn',
+      title: 'Kỳ',
       key: 'period',
-      width: 120,
-      render: (_: any, record: Bill) => `${record.billingMonth}/${record.billingYear}`,
+      width: 100,
+      render: (_: any, record: PaymentHistory) => `${record.billingMonth}/${record.billingYear}`,
     },
     {
       title: 'Tổng tiền',
@@ -82,37 +125,30 @@ export const PaymentsPage = () => {
       ),
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
+      title: 'Phương thức',
+      dataIndex: 'paymentMethod',
+      key: 'paymentMethod',
       width: 130,
-      render: (status: string) => (
-        <Tag color={getStatusColor(status)}>{getStatusText(status)}</Tag>
+      render: (method: string | null) => (
+        <Tag color="green">{getPaymentMethodText(method)}</Tag>
       ),
-    },
-    {
-      title: 'Hạn thanh toán',
-      dataIndex: 'dueDate',
-      key: 'dueDate',
-      width: 120,
-      render: (date: string) => new Date(date).toLocaleDateString('vi-VN'),
     },
     {
       title: 'Ngày thanh toán',
       dataIndex: 'paymentDate',
       key: 'paymentDate',
-      width: 120,
-      render: (date: string | null) => 
+      width: 140,
+      render: (date: string | null) =>
         date ? new Date(date).toLocaleDateString('vi-VN') : '-',
     },
     {
       title: 'Thao tác',
       key: 'action',
-      width: 120,
+      width: 100,
       fixed: 'right' as const,
-      render: (_: any, record: Bill) => (
-        <Button 
-          type="link" 
+      render: (_: any, record: PaymentHistory) => (
+        <Button
+          type="link"
           onClick={() => handleViewDetail(record)}
         >
           Chi tiết
@@ -125,28 +161,62 @@ export const PaymentsPage = () => {
     <MainLayout>
       <div className="p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Quản lý thanh toán</h1>
-          <p className="text-gray-600">Danh sách tất cả hóa đơn của chủ trọ</p>
+          <h1 className="text-2xl font-bold">Lịch sử thanh toán</h1>
+          <p className="text-gray-600">Danh sách lịch sử thanh toán</p>
         </div>
+
+        {/* Filter */}
+        <Card className="mb-4">
+          <Row gutter={[12, 12]} align="middle">
+            <Col>
+              <span className="font-medium mr-2">Tháng:</span>
+              <Select
+                value={filterMonth}
+                onChange={(val) => setFilterMonth(val)}
+                options={monthOptions}
+                style={{ width: 120 }}
+              />
+            </Col>
+            <Col>
+              <span className="font-medium mr-2">Năm:</span>
+              <Select
+                value={filterYear}
+                onChange={(val) => setFilterYear(val)}
+                options={yearOptions}
+                style={{ width: 100 }}
+              />
+            </Col>
+            <Col>
+              <Space>
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleFilter}>
+                  Lọc
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleShowAll}>
+                  Tất cả
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Card>
 
         <Card>
           <Table
             columns={columns}
-            dataSource={ownerBills}
-            rowKey="billId"
+            dataSource={payments}
+            rowKey="paymentHistoryId"
             loading={loading}
             scroll={{ x: 1200 }}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
-              showTotal: (total) => `Tổng ${total} hóa đơn`,
+              showTotal: (total) => `Tổng ${total} giao dịch`,
             }}
           />
         </Card>
 
-        {/* Bill Detail Modal */}
+        {/* Payment Detail Modal */}
         <Modal
-          title="Chi tiết hóa đơn"
+          title="Chi tiết thanh toán"
           open={detailModalOpen}
           onCancel={() => setDetailModalOpen(false)}
           footer={[
@@ -156,39 +226,33 @@ export const PaymentsPage = () => {
           ]}
           width={800}
         >
-          {selectedBill && (
+          {selectedPayment && (
             <div className="space-y-4">
               {/* Thông tin khách hàng */}
               <Card title="Thông tin khách hàng" size="small">
                 <Descriptions column={2} bordered>
-                  <Descriptions.Item label="Họ tên">{selectedBill.tenantName}</Descriptions.Item>
-                  <Descriptions.Item label="Số điện thoại">{selectedBill.tenantPhone}</Descriptions.Item>
-                  <Descriptions.Item label="Mã khách hàng" span={2}>{selectedBill.tenantId}</Descriptions.Item>
+                  <Descriptions.Item label="Họ tên">{selectedPayment.tenantName}</Descriptions.Item>
+                  <Descriptions.Item label="Số điện thoại">{selectedPayment.tenantPhone}</Descriptions.Item>
+                  <Descriptions.Item label="Mã khách hàng" span={2}>{selectedPayment.tenantId}</Descriptions.Item>
                 </Descriptions>
               </Card>
 
               {/* Thông tin hóa đơn */}
               <Card title="Thông tin hóa đơn" size="small">
                 <Descriptions column={2} bordered>
-                  <Descriptions.Item label="Mã hóa đơn">{selectedBill.billId}</Descriptions.Item>
-                  <Descriptions.Item label="Mã hợp đồng">{selectedBill.contractId}</Descriptions.Item>
-                  <Descriptions.Item label="Phòng">{selectedBill.roomCode}</Descriptions.Item>
+                  <Descriptions.Item label="Mã thanh toán">{selectedPayment.paymentHistoryId}</Descriptions.Item>
+                  <Descriptions.Item label="Mã hóa đơn">{selectedPayment.billId}</Descriptions.Item>
+                  <Descriptions.Item label="Mã hợp đồng">{selectedPayment.contractId}</Descriptions.Item>
+                  <Descriptions.Item label="Phòng">{selectedPayment.roomCode}</Descriptions.Item>
                   <Descriptions.Item label="Kỳ hóa đơn">
-                    {selectedBill.billingMonth}/{selectedBill.billingYear}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái">
-                    <Tag color={getStatusColor(selectedBill.status)}>
-                      {getStatusText(selectedBill.status)}
-                    </Tag>
+                    {selectedPayment.billingMonth}/{selectedPayment.billingYear}
                   </Descriptions.Item>
                   <Descriptions.Item label="Hạn thanh toán">
-                    {new Date(selectedBill.dueDate).toLocaleDateString('vi-VN')}
+                    {selectedPayment.dueDate ? new Date(selectedPayment.dueDate).toLocaleDateString('vi-VN') : '-'}
                   </Descriptions.Item>
-                  {selectedBill.paymentDate && (
-                    <Descriptions.Item label="Ngày thanh toán" span={2}>
-                      {new Date(selectedBill.paymentDate).toLocaleDateString('vi-VN')}
-                    </Descriptions.Item>
-                  )}
+                  <Descriptions.Item label="Ngày thanh toán" span={2}>
+                    {selectedPayment.paymentDate ? new Date(selectedPayment.paymentDate).toLocaleString('vi-VN') : '-'}
+                  </Descriptions.Item>
                 </Descriptions>
               </Card>
 
@@ -196,51 +260,49 @@ export const PaymentsPage = () => {
               <Card title="Chi tiết chi phí" size="small">
                 <Descriptions column={1} bordered>
                   <Descriptions.Item label="Tiền phòng">
-                    <span className="font-semibold">{formatCurrency(selectedBill.roomPrice)}</span>
+                    <span className="font-semibold">{formatCurrency(selectedPayment.roomPrice)}</span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Tiền điện">
-                    <span className="font-semibold">{formatCurrency(selectedBill.electricityCost)}</span>
+                    <span className="font-semibold">{formatCurrency(selectedPayment.electricityCost)}</span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Tiền nước">
-                    <span className="font-semibold">{formatCurrency(selectedBill.waterCost)}</span>
+                    <span className="font-semibold">{formatCurrency(selectedPayment.waterCost)}</span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Tiền dịch vụ">
-                    <span className="font-semibold">{formatCurrency(selectedBill.serviceCost)}</span>
+                    <span className="font-semibold">{formatCurrency(selectedPayment.serviceCost)}</span>
                   </Descriptions.Item>
                   <Descriptions.Item label="Tổng cộng">
                     <span className="text-lg font-bold text-blue-600">
-                      {formatCurrency(selectedBill.totalAmount)}
+                      {formatCurrency(selectedPayment.totalAmount)}
                     </span>
                   </Descriptions.Item>
                 </Descriptions>
               </Card>
 
               {/* Thông tin thanh toán */}
-              {selectedBill.status === 'PAID' && (
-                <Card title="Thông tin thanh toán" size="small">
-                  <Descriptions column={2} bordered>
-                    <Descriptions.Item label="Phương thức">
-                      {selectedBill.paymentMethod || '-'}
-                    </Descriptions.Item>
-                    <Descriptions.Item label="Mã giao dịch">
-                      {selectedBill.transactionCode || '-'}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </Card>
-              )}
+              <Card title="Thông tin thanh toán" size="small">
+                <Descriptions column={2} bordered>
+                  <Descriptions.Item label="Phương thức">
+                    {getPaymentMethodText(selectedPayment.paymentMethod)}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mã giao dịch">
+                    {selectedPayment.transactionCode || '-'}
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
 
               {/* Ghi chú */}
-              {selectedBill.note && (
+              {selectedPayment.note && (
                 <Card title="Ghi chú" size="small">
-                  <p>{selectedBill.note}</p>
+                  <p>{selectedPayment.note}</p>
                 </Card>
               )}
 
               {/* Thông tin chủ trọ */}
               <Card title="Thông tin chủ trọ" size="small">
                 <Descriptions column={2} bordered>
-                  <Descriptions.Item label="Họ tên">{selectedBill.ownerName}</Descriptions.Item>
-                  <Descriptions.Item label="Số điện thoại">{selectedBill.ownerPhone}</Descriptions.Item>
+                  <Descriptions.Item label="Họ tên">{selectedPayment.ownerName}</Descriptions.Item>
+                  <Descriptions.Item label="Số điện thoại">{selectedPayment.ownerPhone}</Descriptions.Item>
                 </Descriptions>
               </Card>
             </div>

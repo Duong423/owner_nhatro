@@ -8,6 +8,7 @@ import { DashboardPage } from '@/pages/Dashboard';
 import { RoomsPage } from '@/pages/Rooms';
 import { TenantsPage } from '@/pages/Tenants';
 import { ContractsPage } from '@/pages/Contracts';
+import { NewContractPage } from '@/pages/Contracts/NewContractPage';
 import { PaymentsPage } from '@/pages/Payments';
 import { VehiclesPage } from '@/pages/Vehicles';
 import { BillsPage } from '@/pages/Bills/BillsPage';
@@ -58,6 +59,14 @@ export const AppRoutes = () => {
                         element={
                             <ProtectedRoute>
                                 <ContractsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/contracts/new"
+                        element={
+                            <ProtectedRoute>
+                                <NewContractPage />
                             </ProtectedRoute>
                         }
                     />
