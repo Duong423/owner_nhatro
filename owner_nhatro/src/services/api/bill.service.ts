@@ -91,4 +91,27 @@ export const billService = {
     
     return await response.blob();
   },
+
+  /**
+   * Export payment history to Excel
+   * GET /api/bills/payment-history/export-excel?month={month}&year={year}
+   */
+  exportPaymentHistoryExcel: async (month: number, year: number): Promise<Blob> => {
+    const token = localStorage.getItem('accessToken');
+    const response = await fetch(
+      `${axiosInstance.defaults.baseURL}/bills/payment-history/export-excel?month=${month}&year=${year}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Xuất file Excel thất bại');
+    }
+
+    return await response.blob();
+  },
 };

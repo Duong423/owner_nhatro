@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { MainLayout } from '@/layouts/MainLayout';
 import { billService } from '@/services/api/bill.service';
-import { Table, Tag, Space, Button, Card, Descriptions, Modal, Select, Row, Col } from 'antd';
-import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Table, Tag, Space, Button, Card, Descriptions, Modal, Select, Row, Col, message } from 'antd';
+import { SearchOutlined, ReloadOutlined, FileExcelOutlined } from '@ant-design/icons';
 import type { PaymentHistory } from '@/types/payment.types';
 import { formatCurrency } from '@/utils/helpers/formatters';
 
@@ -25,6 +25,7 @@ export const PaymentsPage = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [filterMonth, setFilterMonth] = useState<number>(currentDate.getMonth() + 1);
   const [filterYear, setFilterYear] = useState<number>(currentDate.getFullYear());
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     fetchByMonth(filterMonth, filterYear);
@@ -60,6 +61,26 @@ export const PaymentsPage = () => {
 
   const handleShowAll = () => {
     fetchAllPayments();
+  };
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const blob = await billService.exportPaymentHistoryExcel(filterMonth, filterYear);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `lich-su-thanh-toan-${filterMonth}-${filterYear}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error exporting Excel:', err);
+      message.error('Xuất file Excel thất bại');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleViewDetail = (payment: PaymentHistory) => {
@@ -193,6 +214,15 @@ export const PaymentsPage = () => {
                 </Button>
                 <Button icon={<ReloadOutlined />} onClick={handleShowAll}>
                   Tất cả
+                </Button>
+                <Button
+                  type="default"
+                  icon={<FileExcelOutlined />}
+                  onClick={handleExportExcel}
+                  loading={exporting}
+                  style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
+                >
+                  Xuất Excel
                 </Button>
               </Space>
             </Col>
