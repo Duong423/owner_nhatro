@@ -106,7 +106,10 @@ export const ContractsPage: React.FC = () => {
               Đặt lại
             </Button>
           </div>
-          <Table columns={columns} dataSource={contracts} rowKey="contractId" loading={loading} pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Tổng ${total} hợp đồng` }} />
+          <Table columns={columns} dataSource={[...contracts].sort((a, b) => {
+            const order: Record<string, number> = { PENDING: 0, ACTIVE: 1, TERMINATED: 2 };
+            return (order[a.status] ?? 99) - (order[b.status] ?? 99);
+          })} rowKey="contractId" loading={loading} pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Tổng ${total} hợp đồng` }} />
         </Card>
 
         <CreateContractModal />

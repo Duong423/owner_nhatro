@@ -24,3 +24,14 @@ export interface CreateTenantDto {
 }
 
 export interface UpdateTenantDto extends Partial<CreateTenantDto> {}
+
+export interface TenantInfoDTO {
+  tenantId: number;
+  name: string;
+  phone: string;
+  email?: string;
+  cccd?: string;
+  contractId: number;
+  hostelName?: string;
+  roomCode?: string;
+}

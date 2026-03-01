@@ -88,7 +88,7 @@ export const BillsPage: React.FC = () => {
         {/* Room Cards */}
         <Card className="mb-6" title="Chọn phòng để xem hóa đơn" loading={loading}>
           <Row gutter={[16, 16]}>
-            {hostels.map((hostel) => {
+            {hostels.filter((h) => h.status?.toUpperCase() === 'FULL').map((hostel) => {
               const displayRoomCode = hostel.hostelRoomCode || hostel.roomCode || hostel.name;
               
               return (

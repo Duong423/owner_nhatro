@@ -1,5 +1,6 @@
 import { axiosInstance } from './axios.config';
 import type { Contract, CreateContractDto, UpdateContractDto } from '@/types';
+import type { TenantInfoDTO } from '@/types/tenant.types';
 
 export const contractService = {
     /**
@@ -97,5 +98,14 @@ export const contractService = {
         // responseType 'blob' ensures we get the raw binary data
         const response: any = await axiosInstance.get(`/contracts/${contractId}/pdf`, { responseType: 'blob' as const });
         return response;
+    },
+
+    /**
+     * Get all active tenants for owner
+     * GET /api/contracts/owner/active-tenants
+     */
+    getActiveTenants: async (): Promise<TenantInfoDTO[]> => {
+        const response: any = await axiosInstance.get('/contracts/owner/active-tenants');
+        return response.result || [];
     }
 };

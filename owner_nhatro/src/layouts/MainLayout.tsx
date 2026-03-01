@@ -10,10 +10,12 @@ interface MainLayoutProps {
 const NAV_ITEMS = [
   { path: '/rooms', label: 'Phòng trọ' },
   { path: '/tenants', label: 'Đặt trọ' },
+  { path: '/active-tenants', label: 'Khách thuê' },
   { path: '/contracts', label: 'Hợp đồng' },
   { path: '/bills', label: 'Hóa đơn' },
   { path: '/payments', label: 'Thanh toán' },
   { path: '/vehicles', label: 'Phương tiện' },
+  
 ];
 
 export const MainLayout = ({ children }: MainLayoutProps) => {

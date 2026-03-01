@@ -12,6 +12,7 @@ import { NewContractPage } from '@/pages/Contracts/NewContractPage';
 import { PaymentsPage } from '@/pages/Payments';
 import { VehiclesPage } from '@/pages/Vehicles';
 import { BillsPage } from '@/pages/Bills/BillsPage';
+import { ActiveTenantsPage } from '@/pages/ActiveTenants/ActiveTenantsPage';
 
 export const AppRoutes = () => {
     return (
@@ -91,6 +92,14 @@ export const AppRoutes = () => {
                         element={
                             <ProtectedRoute>
                                 <BillsPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/active-tenants"
+                        element={
+                            <ProtectedRoute>
+                                <ActiveTenantsPage />
                             </ProtectedRoute>
                         }
                     />
